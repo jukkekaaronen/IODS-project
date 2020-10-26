@@ -1,7 +1,7 @@
 
-# About the project
+# Chapter 1
 
-*Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
+Introduction to Open Data Science [My GitHub Repository](https://github.com/jukkekaaronen/IODS-project)
 
 ```{r}
 # This is a so-called "R chunk" where you can write R code.
@@ -9,5 +9,12 @@
 date()
 
 ```
-The text continues here.
+## Day 1  
+**Feeling:** After downloading and installing the latest version of R and Git (what Git _really is_, is still a bit of a mystery to me) I proceeded to complete the DataCamp excercises and earn a jaw-dropping mouth-watering **1870 XP** and a fancy certificate delivered straight to my e--mail along with some ~~spam~~ offers from the team at DataCamp. I feel great and excited about the course!  
+  
+**Expectations:** I work on the analysis of impoliteness and negative evaluation in fictional texts and have previously been using RStudio and simple R-scripts to explore my results. From this course I hope to:  
+* learn new skills for using R and RStudio for future research  
+* get acquainted with the workings of GitHub  
+* increase my understanding of data science and statistics (coming from a qualitative field of research)  
+* increase the quality of my research and the way I plan, collect and analyse my datasets  
 
