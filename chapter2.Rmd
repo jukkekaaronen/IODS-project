@@ -11,3 +11,76 @@ date()
 ```
 
 Here we go again...
+```{r}
+###library dplyr###
+
+library(dplyr)
+library(GGally)
+library(ggplot2)
+#read dataset from local directory
+
+l14 <- read.csv("C:/Users/Jukke/OneDrive/Työpöytä/IODS/IODS-project/data/ln14_analysis.csv") %>% select(gender, Age, attitude, deep, stra, surf, Points)
+
+```
+
+graphical overview
+
+```{r}
+p <- ggpairs(l14, mapping = aes(col = gender, alpha = 0.3,), lower = list(combo = wrap("facethist", bins = 20)))
+# draw the plot
+p
+
+```
+
+explanation
+
+
+```{r}
+l14_sum <- summary(l14)
+l14_sum
+```
+
+Gender
+```{r}
+l14_gen <- count(l14, gender)
+l14_gen
+```
+
+Attitude and Points
+
+```{r}
+plot_ap <- ggplot(l14, aes(x = attitude, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Student's Attitude vs. Points") + labs(x = "Attitude")
+plot_ap
+```
+
+Strategy and Points
+```{r}
+plot_sp <- ggplot(l14, aes(x = stra, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Student's Strategy vs. Points") + labs(x = "Strategy")
+plot_sp
+```
+
+Surface and Points
+```{r}
+plot_fp <- ggplot(l14, aes(x = surf, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Student's Surface Learning vs. Points") + labs(x = "Surface")
+plot_fp
+```
+
+Multiple Regression
+
+```{r}
+multiple_regression <- lm(Points ~ attitude + stra + surf, data = l14)
+summary(multiple_regression)
+```
+
+Multiple Regression Redone
+```{r}
+regression <- lm(Points ~ attitude, data = l14)
+summary(regression)
+```
+
+Diagnostic Plots
+```{r}
+dp <- plot(regression, which = c(1,2,5))
+
+dp
+```

@@ -52,10 +52,12 @@ strategic_columns
 learn2014$stra <- rowMeans(strategic_columns)
 learn2014$stra
 
-# Assign dataset with columns gender,age, attitude, deep, stra, surf, points and filter Points > 0
+# Assign dataset with columns
+# gender,age, attitude, deep, stra, surf, points and filter Points > 0
 ln14_analysis <- select(learn2014,gender, Age, attitude, deep, stra, surf, Points) %>% filter(Points > 0)
 dim(ln14_analysis) #166 rows 7 columns
 str(ln14_analysis)
+head(ln14_analysis)
 
 # Write .csv
 write.csv(ln14_analysis, "ln14_analysis.csv")
