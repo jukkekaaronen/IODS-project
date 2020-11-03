@@ -1,6 +1,6 @@
-# Insert chapter 2 title here
+# Chapter 2 Regression and Model Validation
 
-*Describe the work you have done this week and summarize your learning.*
+*This week I have worked on wrangling and analysing a dataset for learning approaches. Describe the work you have done this week and summarize your learning.*
 
 - Describe your work and results clearly. 
 - Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
@@ -10,7 +10,11 @@
 date()
 ```
 
-Here we go again...
+# 1
+
+## 1.1 Reading the Dataset and Calling Packages
+Packages required for this report include the dplyr, ggplot2, GGally and kableExtra packages. The packages are called with `library`.  
+The dataset is in .csv format in the local directory and is read with the `read.csv` function and assigned a value (**l14**) below. For some reason the .csv is mutated with a column for row number. I leave it out by selecting the 7 variables with a `%>%` pipe operator.
 ```{r}
 ###library dplyr###
 
@@ -23,35 +27,43 @@ library(kableExtra)
 l14 <- read.csv("C:/Users/Jukke/OneDrive/Työpöytä/IODS/IODS-project/data/ln14_analysis.csv") %>% select(gender, Age, attitude, deep, stra, surf, Points)
 
 ```
+## 1.2 Description of the Dataset
+The **l14** dataset is derived from data collected by Vehkalahti (Dec 2014 - Jan 2015) ) from a questionnaire for Finnish students about their learning habits and approaches. The questionnaire includes a brief 32 item version of the ASSIST (Approaches and Study Skills Inventory for Students) and SATS (Survey of Attitudes towards Statistics) ([link to meta documentation](https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS3-meta.txt), accessed Nov 3rd 2020). Questions were answered on a scale of 1-5.  
+The **l14** dataset consists of means counted for each respondent from clusters of questions related to the variables of attitude (10 items), deep learning (12 items), surface learning (12 items) and strategic learning (10 items) ([see here](https://www.mv.helsinki.fi/home/kvehkala/JYTmooc/JYTOPKYS2-meta.txt), accessed Nov 3 2020).  
+Deep learning refers to student's intention to maximize understanding. Surface learning refers to memorizing without understanding. Strategic learning refers to applying strategies that maximize possibilities for highest grades.  
 
 # 2
 
 ## 2.1 Graphical Overview
-A graphical overview in Figure 1 displays the datasets 7 variables (gender, age, attitude, deep learning, strategic learning, surface learning and exam points) in relation to each other.
+A graphical overview in Figure 1 displays the **l14** dataset and its 7 variables (gender, age, attitude, deep learning, strategic learning, surface learning and exam points) in relation to each other.  
+The figure is produced with the `ggpairs` function from the GGally package.
 
 ```{r}
-p <- ggpairs(l14, mapping = aes(alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
+p <- ggpairs(l14, mapping = aes(alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20))) + ggtitle("Figure 1")
 
 # draw the plot
 p
 
 ```
-
+  
+  From this overview we can find a correlation between attitude and exam points (0.437), as well as negative correlation between attitude and surface learning (memorizing without understanding) (-0.176) and a negative correlation between surface learning and deep learning (-0.324). These seem fairly intuitive as students might be expected to score systematically differently on deep and surface learning, and we might expect attitudes towards statistics to correlate with students' exam points.
+  
 ## 2.2 Variables
 
-This section discusses the variables by exploring the dataset with the `summary` function and a `count` of gender. 
+This section discusses the variables by exploring the dataset with the `summary` function and a `count` of gender. The summary shows the minimum and maximum values appearing in the dataset for each variable as well as their mean and median values.
 ```{r}
 l14_sum <- summary(l14)
-l14_sum
+print(l14_sum)
 l14_gen <- count(l14, gender)
 
-kable(l14_gen, format = "html", caption = "Students' Gender")
+kable(l14_gen, format = "html", caption = " Table 1 Students' Gender")
 ```
-
+  
+    
 **Age**: Respondents are aged between 17 and 55 with the median age being 22.  
 **Gender**: Binary Male/Female with a distribution of 56/110  
-**Learning approaches**: Deep, surface and strategic learning approaches scored by means discussed in previous section.  
-**Attitude**: Students' attitude score  
+**Learning approaches**: Deep, surface and strategic learning approaches and their min-max values occurring in the dataset (scored by means discussed in previous section)  
+**Attitude**: Students' attitude score and mi-max values occurring in the dataset  
 **Points**: Exam points with a range of 7-33 and a mean of 22.72
 
 # 3
@@ -59,55 +71,85 @@ kable(l14_gen, format = "html", caption = "Students' Gender")
 ## 3.1 Selecting Explanatory Variables
 
 This section will investigate the relation between the students' exam points and their deep and surface learning approaches as well as their attitude. The objective is to find out if the exploratory variables (Attitude, Surface learning, Deep learning) are associated in a systematic way to students' exam points. 
+First, lets look at the exploratory variables in relation to exam points individually in scatter plots:
 
 ### 3.1.1 Attitude and Exam Points
+  These scatter plots are produced with `ggplot2` by mapping the exploratory variables on the x axis with exam points on the y axis, and separated by gender with the `col = gender` value. The `geom_point` creates points for each location in the dataset and the `geom_smooth(method = "lm")` creates the linear regression model. In section 3.2 these relations are explored further with multiple linear regression.
 
 ```{r}
-plot_ap <- ggplot(l14, aes(x = attitude, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Student's Attitude vs. Points") + labs(x = "Attitude")
+plot_ap <- ggplot(l14, aes(x = attitude, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Figure 2 Student's Attitude vs. Points") + labs(x = "Attitude")
 plot_ap
 ```
-
+  
+  Figure 2 shows that Attitude and Exam points seem to have a  linear regression. The same can not be said for the Deep learning and Surface learning approaches (Figures 3 and 4) which do not show evidence towards significant linear regression:   
 ### 3.1.2 Deep Learning and Exam Points
 ```{r}
-plot_dp <- ggplot(l14, aes(x = deep, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Student's Deep Learning vs. Points") + labs(x = "Deep Learning")
+plot_dp <- ggplot(l14, aes(x = deep, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Figure 3 Student's Deep Learning vs. Points") + labs(x = "Deep Learning")
 plot_dp
 ```
 
 ### 3.1.3 Surface Learning and Exam Points
 ```{r}
-plot_sp <- ggplot(l14, aes(x = surf, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Student's Surface Learning vs. Points") + labs(x = "Surface Learning")
+plot_sp <- ggplot(l14, aes(x = surf, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Figure 4 Student's Surface Learning vs. Points") + labs(x = "Surface Learning")
 plot_sp
 ```
 
 ## 3.2 Multiple Regression
-
+  
 ### 3.2.1 Overview of Variables
+
+A quick graphic overview of the target variable (exam points) and explanatory variables (deep, surface, attitude) in a similar plot as in section 2. From this we can already deduce it may not make sense to perform a multiple regression analysis on the 3 variables because the surf and deep categories do not create a line of regression similar to attitude and points.  
+A new dataset is created from the **l14** dataset selecting only the gender, attitude, surf, deep, and points variables. The dataset is plotted with the `plot` function and the first column (gender) omitted from the plot with `[-1]`.
 ```{r}
 l14_b <- select(l14, gender, attitude, surf, deep, Points)
-p2 <- ggpairs(l14_b, mapping = aes(col = gender, alpha = 0.3), lower = list(combo = wrap("facethist", bins = 20)))
-p2
+
+plot(l14_b[-1])
 ```
   
 ### 3.2.2 Multiple Regression Model
 
-
+For multiple regression, a formula is created with the `lm` linear model function that is assigned with the target value (Points) and the explanatory values (attitude + deep + surf). This means that points is predicted by attitude, deep learning, and surface learning. The formula is assigned as multiple_regression and a `summary` function produces the information below:  
 ```{r}
 multiple_regression <- lm(Points ~ attitude + deep + surf, data = l14)
 mr <- summary(multiple_regression)
 print(mr)
 ```
-We fail to find statistical significance in the p-values for deep learning (p < 0.23) and surface learning (p < 0.19). However, attitude seems statistically significant. In the next section let us examine the linear regression of exam points and attitude.
 
-## Model Changed to Simple Linear Regression
+The multiple regression summary provides some results. In short, it suggests that using attitude scores alone would be a better model for predicting exam scores. This can be seen in the Pr(>|t|) value for attitude, which means that using attitude alone is significantly better to predict exam points.  
+The model's adjusted R-Squared value is 0.1876, this is a fairly low score meaning that the three explanatory variables together account for only 19% of the variation. 
+
+The F-test for testing the hypothesis that all three regression coefficients are zero has a very low associated p-value. Thus  there is strong evidence that not all three coefficients are zero.  
+
+In the next section,  the linear regression of exam points and attitude is examined by removing the deep and surface learning variables.  
+
+
+## 3.3 Model Changed to Simple Linear Regression
+
+  A similar formula is created as in the previous section. This time the formula is simple with points and attitude as the only values.
 ```{r}
 regression <- lm(Points ~ attitude, data = l14)
 summary(regression)
+
 ```
+From this we can interpret that there is a causal relation between attitude and exam points. However, the R-Squared is still low (0.19). In the next section we can examine the model with diagnostics plots.
 
-
-Diagnostic Plots
+## 3.4 Diagnostic Plots
+  
+  Diagnostic plots can be used to examine the violations in linear regression assumptions. Diagnostics plot can be made with `plot` function by assignin the linear model formula, created in section 3.3 as the data. The `which = c()` value selects the desired plots, in this case: Residuals vs Fitted, Normal Q-Q, and Residuals vs Leverage plots.  
 ```{r}
 dp <- plot(regression, which = c(1,2,5))
 
-dp
 ```
+   
+### 3.4.1 Residuals vs Fitted
+The Residuals vs Fitted plot shows whether linearity holds. In addition, the spread of residuals should stay the same on the x-axis. In this plot the linearity holds reasonably well. There are however some outliers (145, 56, 35) that challenge assumptions of linearity.  
+
+### 3.4.2 Normal Q-Q
+  The Normal Q-Q plot provides a method to explore the normality assumption that errors are normally distributed. The Normal Q-Q plot shows that there is a good to reasonable fit in middle of the line but questionable in the beginning.  
+
+### 3.4.3 Residuals vs Leverage
+  
+  Leverage measures a single observations impact on the model. Observations with unusually high impact can be found with the Residuals vs Leverage plot. 
+
+# 4 Conclusion
+  It always helps to have a positive attitude!
