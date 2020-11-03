@@ -78,8 +78,10 @@ plot_ap <- ggplot(l14, aes(x = attitude, y = Points, col = gender)) + geom_point
 plot_ap
 ```
   
-  Figure 2 shows that Attitude and Exam points seem to have some  linear regression. The same can not be said for the deep learning and surface learning approaches (Figures 3 and 4) which do not show evidence towards significant linear regression:   
+  Figure 2 shows that Attitude and Exam points seem to have some  linear regression. The same can not be said for the deep learning and surface learning approaches (Figures 3 and 4) which do not show evidence towards significant linear regression: 
+    
 ### 3.1.2 Deep Learning and Exam Points
+  
 ```{r}
 plot_dp <- ggplot(l14, aes(x = deep, y = Points, col = gender)) + geom_point() + geom_smooth(method = "lm") + ggtitle("Figure 3 Student's Deep Learning vs. Points") + labs(x = "Deep Learning")
 plot_dp

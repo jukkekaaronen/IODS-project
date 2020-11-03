@@ -1,7 +1,8 @@
 #Jukke Kaaronen
 #Nov 2nd 2020
 #Data wrangling exercise for IODS2020 learning2014 dataset
-
+#Data source:
+#http://www.helsinki.fi/~kvehkala/JYTmooc/JYTOPKYS3-data.txt
 ##READ DPLYR##
 library(dplyr)
 
