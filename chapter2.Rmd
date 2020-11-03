@@ -131,7 +131,7 @@ regression <- lm(Points ~ attitude, data = l14)
 summary(regression)
 
 ```
-From this we can interpret that there is a causal relation between attitude and exam points. However, the R-Squared is still low (0.19). In the next section we can examine the model with diagnostics plots.
+From this we can interpret that there is a causal relation between attitude and exam points. However, the R-Squared is still low (0.19). Perhaps having a good attitude towards statistics is not enough to get good exam points? In the next section we can examine the model with diagnostics plots.
 
 ## 3.4 Diagnostic Plots
   
