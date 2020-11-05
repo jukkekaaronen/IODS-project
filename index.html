@@ -466,7 +466,7 @@ summary {
 <pre class="r"><code># This is a so-called &quot;R chunk&quot; where you can write R code.
 
 date()</code></pre>
-<pre><code>## [1] &quot;Tue Nov 03 14:44:48 2020&quot;</code></pre>
+<pre><code>## [1] &quot;Thu Nov 05 12:34:47 2020&quot;</code></pre>
 <div id="day-1" class="section level2">
 <h2>Day 1</h2>
 <p><strong>Feeling:</strong> After downloading and installing the latest version of R and Git (what Git <em>really is</em>, is still a bit of a mystery to me) I proceeded to complete the DataCamp excercises and earn a jaw-dropping mouth-watering <strong>1870 XP</strong> and a fancy certificate delivered straight to my e–mail along with some <del>spam</del> offers from the team at DataCamp. I feel great and excited about the course!</p>
@@ -478,7 +478,7 @@ date()</code></pre>
 <h1>Chapter 2 Regression and Model Validation</h1>
 <p><em>This week I have worked on wrangling and analysing a dataset for learning approaches. I have learned how to do linear model analysis in R and produce visualizations of the results. For me, The trickiest part of this weeks exercise was understanding how to interpret the statistical tests and diagnostic plots and what they mean</em></p>
 <pre class="r"><code>date()</code></pre>
-<pre><code>## [1] &quot;Tue Nov 03 14:44:48 2020&quot;</code></pre>
+<pre><code>## [1] &quot;Thu Nov 05 12:34:47 2020&quot;</code></pre>
 <div id="section" class="section level2">
 <h2>1</h2>
 </div>
@@ -661,9 +661,57 @@ print(mr)</code></pre>
 ## Residual standard error: 5.313 on 162 degrees of freedom
 ## Multiple R-squared:  0.2024, Adjusted R-squared:  0.1876 
 ## F-statistic:  13.7 on 3 and 162 DF,  p-value: 5.217e-08</code></pre>
-<p>The multiple regression summary provides results for the validity of the model. In short, it suggests that using attitude scores alone would be a better model for predicting exam scores. This can be seen in the Pr(&gt;|t|) value for attitude, which means that using attitude alone is significantly better to predict exam points.<br />
-The model’s adjusted R-Squared value is 0.1876, this is a fairly low score meaning that the three explanatory variables together account for only 19% of the variation.</p>
-<p>The F-test for testing the hypothesis that all three regression coefficients are zero has a very low associated p-value. Thus there is strong evidence that not all three coefficients are zero.</p>
+<p>The multiple regression summary provides results for the validity of the model. The model’s adjusted R-Squared value is 0.1876, this is a fairly low score meaning that the three explanatory variables together account for only 19% of the variation.</p>
+<p>The F-test for testing the hypothesis that all three regression coefficients are zero has a very low associated p-value. Thus there is strong evidence that not all three coefficients are zero.<br />
+The Pr(&gt;|t|) values for attitude, deep, and surf indicate that a) using attitude and deep would be better at predicting exam points and b) using attitude and surf would be better at predicting exam points. By changing the model to these two variants we can examine the validity of new models attitude + deep and attitude + surf:</p>
+<pre class="r"><code>multiple_regression_ad &lt;- lm(Points ~ attitude + deep, data = l14)
+mrad &lt;- summary(multiple_regression_ad)
+multiple_regression_as &lt;- lm(Points ~ attitude + surf, data = l14)
+mras &lt;- summary(multiple_regression_as)
+
+print(mrad)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Points ~ attitude + deep, data = l14)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -16.8463  -3.2975   0.2789   4.1213  11.1399 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)  13.7812     3.1574   4.365 2.25e-05 ***
+## attitude      3.5780     0.5714   6.262 3.25e-09 ***
+## deep         -0.6275     0.7526  -0.834    0.406    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 5.325 on 163 degrees of freedom
+## Multiple R-squared:  0.194,  Adjusted R-squared:  0.1841 
+## F-statistic: 19.62 on 2 and 163 DF,  p-value: 2.326e-08</code></pre>
+<p>For the model with attitude and deep learning the result is similar, attitude alone would be a better model.</p>
+<pre class="r"><code>print(mras)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Points ~ attitude + surf, data = l14)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -17.277  -3.236   0.386   3.977  10.642 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)  14.1196     3.1271   4.515 1.21e-05 ***
+## attitude      3.4264     0.5764   5.944 1.63e-08 ***
+## surf         -0.7790     0.7956  -0.979    0.329    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 5.32 on 163 degrees of freedom
+## Multiple R-squared:  0.1953, Adjusted R-squared:  0.1854 
+## F-statistic: 19.78 on 2 and 163 DF,  p-value: 2.041e-08</code></pre>
+<p>For the model with attitude and surf the result is similar, attitude alone would be a better model to predict exam points.<br />
+Therefore we may interpret that using attitude alone is significantly better to predict exam points.</p>
 <p>In the next section, the linear regression of exam points and attitude is examined by removing the deep and surface learning variables.</p>
 </div>
 </div>
@@ -703,7 +751,7 @@ summary(regression)</code></pre>
 </div>
 <div id="normal-q-q" class="section level3">
 <h3>3.4.2 Normal Q-Q</h3>
-<p>The Normal Q-Q plot provides a method to explore the normality assumption that errors are normally distributed. The Normal Q-Q plot shows that there is a good to reasonable fit in middle of the line but questionable in the beginning.</p>
+<p>The Normal Q-Q plot provides a method to explore the normality assumption that errors are normally distributed. The Normal Q-Q plot shows that there is a reasonable fit in middle of the line but questionable in the beginning.</p>
 </div>
 <div id="residuals-vs-leverage" class="section level3">
 <h3>3.4.3 Residuals vs Leverage</h3>

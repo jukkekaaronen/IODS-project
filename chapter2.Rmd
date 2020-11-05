@@ -114,10 +114,29 @@ mr <- summary(multiple_regression)
 print(mr)
 ```
 
-The multiple regression summary provides results for the validity of the model. In short, it suggests that using attitude scores alone would be a better model for predicting exam scores. This can be seen in the Pr(>|t|) value for attitude, which means that using attitude alone is significantly better to predict exam points.  
-The model's adjusted R-Squared value is 0.1876, this is a fairly low score meaning that the three explanatory variables together account for only 19% of the variation. 
+The multiple regression summary provides results for the validity of the model. The model's adjusted R-Squared value is 0.1876, this is a fairly low score meaning that the three explanatory variables together account for only 19% of the variation. 
 
-The F-test for testing the hypothesis that all three regression coefficients are zero has a very low associated p-value. Thus  there is strong evidence that not all three coefficients are zero.
+The F-test for testing the hypothesis that all three regression coefficients are zero has a very low associated p-value. Thus  there is strong evidence that not all three coefficients are zero.  
+The Pr(>|t|) values for attitude, deep, and surf indicate that a) using attitude and deep would be better at predicting exam points and b) using attitude and surf would be better at predicting exam points. By changing the model to these two variants we can examine the validity of new models attitude + deep and attitude + surf:  
+
+```{r}
+multiple_regression_ad <- lm(Points ~ attitude + deep, data = l14)
+mrad <- summary(multiple_regression_ad)
+multiple_regression_as <- lm(Points ~ attitude + surf, data = l14)
+mras <- summary(multiple_regression_as)
+
+print(mrad)
+```
+  
+  For the model with attitude and deep learning the result is similar, attitude alone would be a better model.  
+  
+````{r}
+print(mras)
+```
+  
+  For the model with attitude and surf the result is similar, attitude alone would be a better model to predict exam points.  
+Therefore we may interpret that using attitude alone is significantly better to predict exam points.  
+
 
 In the next section,  the linear regression of exam points and attitude is examined by removing the deep and surface learning variables.  
 
@@ -144,7 +163,7 @@ dp <- plot(regression, which = c(1,2,5))
 The Residuals vs Fitted plot shows whether linearity holds. In addition, the spread of residuals should stay the same on the x-axis. In this plot the linearity holds reasonably well. There are however some outliers (145, 56, 35) that challenge assumptions of linearity.  
 
 ### 3.4.2 Normal Q-Q
-  The Normal Q-Q plot provides a method to explore the normality assumption that errors are normally distributed. The Normal Q-Q plot shows that there is a good to reasonable fit in middle of the line but questionable in the beginning.  
+  The Normal Q-Q plot provides a method to explore the normality assumption that errors are normally distributed. The Normal Q-Q plot shows that there is a reasonable fit in middle of the line but questionable in the beginning.  
 
 ### 3.4.3 Residuals vs Leverage
   
