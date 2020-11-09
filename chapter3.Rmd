@@ -57,12 +57,14 @@ The purpose of this chapter is to study the relation of high/low alchol use with
   High use is distributed unequally between M (72/184)and F(42/198):
 
 ```{r}
-a1 <- alc %>% group_by(sex, high_use) %>% count()
-print(a1)
 
 pS <- ggplot(alc, aes(x = high_use, fill = sex))
 pS + geom_bar(position = "dodge")
 
+xtabs(~ high_use + sex, data=alc)
+
+sexlog <- glm(high_use ~ sex, data = alc, family = "binomial")
+summary(sexlog)
 ```
   
 #### Final Grade and Alcohol Use
@@ -72,6 +74,8 @@ pS + geom_bar(position = "dodge")
 pG3 <- ggplot(alc, aes(x = high_use, y = G3))
 pG3 + geom_boxplot() + ggtitle("Distribution of Final Grades by High Alcohol Use") + labs(y = "Grade", x = "High Alcohol Use")
 
+G3log <- glm(high_use ~ G3, data = alc, family = "binomial")
+summary(G3log)
 ```
   
   The boxplot shows that interquartile ranges for grades in non-high alcohol users(AU) is more dispersed. There are more outliers in the low grades for high alcohol users. The median for non-high AU is higher than the 75th percentile for high AU suggesting there might be something of interest, as predicted in the hypothesis.
@@ -88,6 +92,9 @@ pG3b + geom_point() + geom_smooth(method = "lm") + ggtitle("Distribution of Fina
 ```{r}
 pFR <- ggplot(alc, aes(x = high_use, y = famrel))
 pFR + geom_boxplot() + ggtitle("Family Relations and Alcohol Use") + labs(y = "Family Relation bad-excellent", x = "High Alcohol Use")
+
+famlog <- glm(high_use ~ famrel, data = alc, family = "binomial")
+summary(famlog)
 ```
   
   
@@ -102,6 +109,10 @@ pF + geom_boxplot()
 
 silly <- alc %>% group_by(failures, high_use) %>% count()
 silly
+
+failog <- glm(high_use ~ failures, data = alc, family = "binomial")
+summary(failog)
+
 ```
 
 # Logistic Regression
