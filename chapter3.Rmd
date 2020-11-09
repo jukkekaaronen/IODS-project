@@ -1,0 +1,169 @@
+---
+title: "chapter3"
+author: "Jukke Kaaronen"
+date: "09/11/2020"
+output: html_document
+---
+# Library
+```{r}
+library(tidyverse)
+```
+
+# Dataset and Description
+
+## Read Dataset from Local Directory
+
+```{r}
+alc <- read.csv("C:/Users/Jukke/OneDrive/Työpöytä/IODS/IODS-project/data/alc.csv")
+```
+
+## Description
+  
+  The original datasets used for this chapter are made by Paulo Cortez.  
+Link to [metadata](https://archive.ics.uci.edu/ml/datasets/Student+Performance)  
+**Database citation**:  
+P. Cortez and A. Silva. Using Data Mining to Predict Secondary School Student Performance. In A. Brito and J. Teixeira Eds., Proceedings of 5th FUture BUsiness TEChnology Conference (FUBUTEC 2008) pp. 5-12, Porto, Portugal, April, 2008, EUROSIS, ISBN 978-9077381-39-7.  
+**Original Dataset information**: Datasets of student achievement in secondary education in maths and Portuguese in two Portuguese schools with grades and social attributes. Original datasets contains 30 social attributes and 3 grade attributes (first period, second periond, and final grade).  
+
+## Derived dataset
+
+The dataset discussed in this report is derived from the original dataset, discussed in the previous section, by joining the math and Portuguese datasets. Observations with matching social attributes (same student) were selected from the datasets and their scores were averaged. Additional columns for alcohol use (alc_use) and high use (high_use) were created by averaging scores for weekday and weekend alcohol use, and high quantities thereof respectively.
+
+```{r}
+glimpse(alc)
+```
+  
+  The dataset contains 382 observations (students) of 35 variables, see [metadata](https://archive.ics.uci.edu/ml/datasets/Student+Performance) for description. In addition, alc_use is `(Dalc + Walc) / 2` and high_use is logical TRUE/FALSE where `alc_use > 2`  
+  
+# Exploring Alcohol Use and Other Variables
+
+The purpose of this chapter is to study the relation of high/low alchol use with other variables from the dataset.  
+## Variables
+
+  I have chosen 4 variables of interest: sex, failures, famrel, and G3.  
+**Sex**: Binary M/F  
+*Hypothesis*: Sex will not correlate with use of alcohol  
+**Failures**: Number of past class failures  
+*Hypothesis*: Intuitively, failures might have correlations with alcohol use if alcohol use is an indicator of other social problems as well.  
+**Famrel**: Quality of family relationships (numeric: from 1 - very bad to 5 - excellent)  
+*Hypothesis*: Same as above, bad family relations might correlate with higher alcohol use.  
+**G3**: Final Grade (average of math and Portuguese), numeric: from 0 to 20  
+*Hypothesis*: Alcohol use and final grade may correlate.  
+
+### Variable counts
+
+#### Sex and Alcohol Use
+  
+  High use is distributed unequally between M (72/184)and F(42/198):
+
+```{r}
+a1 <- alc %>% group_by(sex, high_use) %>% count()
+print(a1)
+
+pS <- ggplot(alc, aes(x = high_use, fill = sex))
+pS + geom_bar(position = "dodge")
+
+```
+  
+#### Final Grade and Alcohol Use
+  
+  By plotting high_use with G3 we can get a graphic overview of high alcohol use and final grade. 
+```{r}
+pG3 <- ggplot(alc, aes(x = high_use, y = G3))
+pG3 + geom_boxplot() + ggtitle("Distribution of Final Grades by High Alcohol Use") + labs(y = "Grade", x = "High Alcohol Use")
+
+```
+  
+  The boxplot shows that interquartile ranges for grades in non-high alcohol users(AU) is more dispersed. There are more outliers in the low grades for high alcohol users. The median for non-high AU is higher than the 75th percentile for high AU suggesting there might be something of interest, as predicted in the hypothesis.
+```{r}
+  pG3b <- ggplot(alc, aes(x = alc_use, y = G3))
+pG3b + geom_point() + geom_smooth(method = "lm") + ggtitle("Distribution of Final Grade by Alchol Use") + labs(x = "Alcohol Use", y = "Final Grade")
+```
+  
+  There is no linear regression between alcohol use and grades.  
+  
+#### Family Relations and Alcohol Use
+  
+  
+```{r}
+pFR <- ggplot(alc, aes(x = high_use, y = famrel))
+pFR + geom_boxplot() + ggtitle("Family Relations and Alcohol Use") + labs(y = "Family Relation bad-excellent", x = "High Alcohol Use")
+```
+  
+  
+The boxplot shows that High Alcohol Users have reported worse family relations (though still above average).
+  
+#### Failures and Alcohol Use
+  
+  This Box plot reveals that it was a silly idea to try to boxplot failures. A look at the count does reveal there might be something of interest, as the counts for failures are similar for non-high and high AU despite non-high AU outnumbering the high AU.
+```{r}
+pF <- ggplot(alc, aes(x = high_use, y = failures))
+pF + geom_boxplot()
+
+silly <- alc %>% group_by(failures, high_use) %>% count()
+silly
+```
+
+# Logistic Regression
+
+```{r}
+m <- glm(high_use ~ failures + G3 + famrel + sex, data = alc, family = "binomial")
+
+# print out a summary of the model
+summary(m)
+
+# print out the coefficients of the model
+coef(m)
+```
+
+```{r}
+OR <- coef(m) %>% exp
+
+# compute confidence intervals (CI)
+CI <- confint(m) %>% exp
+
+# print out the odds ratios with their confidence intervals
+cbind(OR, CI)
+```
+
+## New Model
+```{r}
+m1 <- glm(high_use ~ failures + famrel + sex, data = alc, family = "binomial")
+
+# print out a summary of the model
+summary(m1)
+
+# print out the coefficients of the model
+coef(m1)
+#
+OR1 <- coef(m1) %>% exp
+
+# compute confidence intervals (CI)
+CI1 <- confint(m1) %>% exp
+
+# print out the odds ratios with their confidence intervals
+cbind(OR1, CI1)
+```
+
+##
+```{r}
+
+# predict() the probability of high_use
+probabilities <- predict(m1, type = "response")
+
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction)
+
+g <- ggplot(alc, aes(x = probability, y = high_use, col = prediction))
+
+# define the geom as points and draw the plot
+g + geom_point()
+
+table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table %>% addmargins
+```
