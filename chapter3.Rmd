@@ -4,20 +4,22 @@ author: "Jukke Kaaronen"
 date: "09/11/2020"
 output: html_document
 ---
-# Library
+# Chapter 3 Logistic Regression
+
+## Library
 ```{r}
 library(tidyverse)
 ```
 
-# Dataset and Description
+## 1 Dataset and Description
 
-## Read Dataset from Local Directory
+### 1.1 Read Dataset from Local Directory
 
 ```{r}
 alc <- read.csv("C:/Users/Jukke/OneDrive/Työpöytä/IODS/IODS-project/data/alc.csv")
 ```
 
-## Description
+### 1.2 Description
   
   The original datasets used for this chapter are made by Paulo Cortez.  
 Link to [metadata](https://archive.ics.uci.edu/ml/datasets/Student+Performance)  
@@ -25,7 +27,7 @@ Link to [metadata](https://archive.ics.uci.edu/ml/datasets/Student+Performance)
 P. Cortez and A. Silva. Using Data Mining to Predict Secondary School Student Performance. In A. Brito and J. Teixeira Eds., Proceedings of 5th FUture BUsiness TEChnology Conference (FUBUTEC 2008) pp. 5-12, Porto, Portugal, April, 2008, EUROSIS, ISBN 978-9077381-39-7.  
 **Original Dataset information**: Datasets of student achievement in secondary education in maths and Portuguese in two Portuguese schools with grades and social attributes. Original datasets contains 30 social attributes and 3 grade attributes (first period, second periond, and final grade).  
 
-## Derived dataset
+### 1.3 Derived dataset
 
 The dataset discussed in this report is derived from the original dataset, discussed in the previous section, by joining the math and Portuguese datasets. Observations with matching social attributes (same student) were selected from the datasets and their scores were averaged. Additional columns for alcohol use (alc_use) and high use (high_use) were created by averaging scores for weekday and weekend alcohol use, and high quantities thereof respectively.
 
@@ -35,10 +37,11 @@ glimpse(alc)
   
   The dataset contains 382 observations (students) of 35 variables, see [metadata](https://archive.ics.uci.edu/ml/datasets/Student+Performance) for description. In addition, alc_use is `(Dalc + Walc) / 2` and high_use is logical TRUE/FALSE where `alc_use > 2`  
   
-# Exploring Alcohol Use and Other Variables
+## 2 Exploring Alcohol Use and Other Variables
 
-The purpose of this chapter is to study the relation of high/low alchol use with other variables from the dataset.  
-## Variables
+The purpose of this chapter is to study the relation of high/low alchol use with other variables from the dataset. 
+
+### 2.3 Variables
 
   I have chosen 4 variables of interest: sex, failures, famrel, and G3.  
 **Sex**: Binary M/F  
@@ -50,26 +53,30 @@ The purpose of this chapter is to study the relation of high/low alchol use with
 **G3**: Final Grade (average of math and Portuguese), numeric: from 0 to 20  
 *Hypothesis*: Alcohol use and final grade may correlate.  
 
-### Variable counts
+### 2.3 Variable counts
 
-#### Sex and Alcohol Use
+#### 2.3.1 Sex and Alcohol Use
   
-  High use is distributed unequally between M (72/184)and F(42/198):
+  High use is distributed unequally between M (72/184)and F(42/198). First I check the possible values of sex with `distinct` to make sure nothing strange is in the dataset. I change the sex column into `factor` (not sure if necessary) check that it has worked with `str` and then proceed to `ggplot` with `geombar`. From this we see a differential distribution of alcohol use with regards to sex. This can also be seen in numbers with `xtabs`. A simple logistic regression with the generalised linear model `glm`, attributed with the argument `family = "binomial"`, which makes the function perform logistic regression, reveals a statistically significant relation with high alcohol use and sex in the dataset. The log(odds) for a female having high alcohol use (AU) is -1.3122 and the increase in log(odds) to a male having high AU is 0.8704. My intuitive hypothesis was wrong.  
+  
 
 ```{r}
-
+distinct(alc, sex)
+alc$sex <- as.factor(alc$sex)
+str(alc)
 pS <- ggplot(alc, aes(x = high_use, fill = sex))
 pS + geom_bar(position = "dodge")
 
-xtabs(~ high_use + sex, data=alc)
+xtabs(~ sex + high_use, data=alc)
 
 sexlog <- glm(high_use ~ sex, data = alc, family = "binomial")
 summary(sexlog)
 ```
   
-#### Final Grade and Alcohol Use
+#### 2.3.2 Final Grade and Alcohol Use
   
-  By plotting high_use with G3 we can get a graphic overview of high alcohol use and final grade. 
+  By plotting high_use with G3 we can get a graphic overview of high alcohol use and final grade. Here I use the `geom_boxplot` to visualise the results.  
+  
 ```{r}
 pG3 <- ggplot(alc, aes(x = high_use, y = G3))
 pG3 + geom_boxplot() + ggtitle("Distribution of Final Grades by High Alcohol Use") + labs(y = "Grade", x = "High Alcohol Use")
@@ -78,16 +85,20 @@ G3log <- glm(high_use ~ G3, data = alc, family = "binomial")
 summary(G3log)
 ```
   
-  The boxplot shows that interquartile ranges for grades in non-high alcohol users(AU) is more dispersed. There are more outliers in the low grades for high alcohol users. The median for non-high AU is higher than the 75th percentile for high AU suggesting there might be something of interest, as predicted in the hypothesis.
+  The boxplot shows that interquartile ranges for grades in non-high alcohol users(AU) is more dispersed. There are more outliers in the low grades for high alcohol users. The median for non-high AU is higher than the 75th percentile for high AU suggesting there might be something of interest, as predicted in my hypothesis.  
+  The `summary` for the glm model also shows some statistical signifcance in the relation.  
+  A quick look at alc_use and G3 on a scatterplot reveals that there is no linear regression between alcohol use and grades.
+  
 ```{r}
-  pG3b <- ggplot(alc, aes(x = alc_use, y = G3))
+pG3b <- ggplot(alc, aes(x = alc_use, y = G3))
 pG3b + geom_point() + geom_smooth(method = "lm") + ggtitle("Distribution of Final Grade by Alchol Use") + labs(x = "Alcohol Use", y = "Final Grade")
 ```
   
-  There is no linear regression between alcohol use and grades.  
+    
   
-#### Family Relations and Alcohol Use
+#### 2.3.3 Family Relations and Alcohol Use
   
+  Make the same boxplot and `glm` for family relations:  
   
 ```{r}
 pFR <- ggplot(alc, aes(x = high_use, y = famrel))
@@ -98,11 +109,11 @@ summary(famlog)
 ```
   
   
-The boxplot shows that High Alcohol Users have reported worse family relations (though still above average).
+The boxplot shows that High Alcohol Users have reported worse family relations and the `summary` for the glm shows statistical significance.
   
-#### Failures and Alcohol Use
+#### 2.3.4 Failures and Alcohol Use
   
-  This Box plot reveals that it was a silly idea to try to boxplot failures. A look at the count does reveal there might be something of interest, as the counts for failures are similar for non-high and high AU despite non-high AU outnumbering the high AU.
+  This boxplot reveals that it was a silly idea to try to boxplot failures. A look at the count does reveal there might be something of interest, as the counts for failures are similar for non-high and high AU despite non-high AU outnumbering the high AU.
 ```{r}
 pF <- ggplot(alc, aes(x = high_use, y = failures))
 pF + geom_boxplot()
@@ -112,51 +123,72 @@ silly
 
 failog <- glm(high_use ~ failures, data = alc, family = "binomial")
 summary(failog)
+```
+  
+  **Let's try something else**. I change the failures column to a factor between student's who have not failed (No) and students who have failed (Yes). This is done with the `ifelse` function that tests if the integer in numbers is 0, if yes then the student has not failed `yes = "No"` and vice versa. I tried to be funny at first and use "Nailed It" vs. "Failed It" but it looked ugly in the `summary`!  
+  
+```{r}
+alc$failures <- ifelse(test = alc$failures == 0, yes = "No", no = "Yes")
+alc$failures <- as.factor(alc$failures)
 
+xtabs(~ failures + high_use, data = alc)
+failog <- glm(high_use ~ failures, data = alc, family = "binomial")
+summary(failog)
 ```
 
-# Logistic Regression
+  From this we see in the `xtabs` that the odds for failing when high_use is TRUE is higher. We also get a slightly better result (do we?) for the `glm` `summary`.
+
+## 3 Logistic Regression
+  
+  In this section I make a `glm` model of `high_use` predicted by `failures` (Yes/No),`G3` `famrel`, and `sex`.
 
 ```{r}
 m <- glm(high_use ~ failures + G3 + famrel + sex, data = alc, family = "binomial")
 
-# print out a summary of the model
+
 summary(m)
 
-# print out the coefficients of the model
-coef(m)
 ```
+  
+  Out of the four variables used to predict high AU, the final grade G3 performs the worst in the model and the low z value and high p-value suggest it is better to leave it out of the model, which is done in section 3.2. 
 
+  
+### 3.1 Odds Ratio and Confidence Interval
+
+
+  To get odds ratios we can apply the exponent function `exp` to the coefficients of the model and assign the output as `OR`. For confidence intervals use the `exp` and `confint` functions on the model. 
+  
 ```{r}
 OR <- coef(m) %>% exp
 
-# compute confidence intervals (CI)
 CI <- confint(m) %>% exp
 
-# print out the odds ratios with their confidence intervals
 cbind(OR, CI)
 ```
+  
+  What these mean. The exponents of the coefficients can be interpreted as odd ratios (**OR**) between a unit change (vs no change) in the explanatory variable. 
 
-## New Model
+### 3.2 New Model
 ```{r}
-m1 <- glm(high_use ~ failures + famrel + sex, data = alc, family = "binomial")
+m1 <- glm(high_use ~ failures + sex + famrel, data = alc, family = "binomial")
 
-# print out a summary of the model
 summary(m1)
 
-# print out the coefficients of the model
-coef(m1)
-#
+
 OR1 <- coef(m1) %>% exp
 
-# compute confidence intervals (CI)
+
 CI1 <- confint(m1) %>% exp
 
-# print out the odds ratios with their confidence intervals
 cbind(OR1, CI1)
+########################
+anova(m, m1, test ="LRT")
 ```
-
-##
+  
+  
+### 3.3 Prediction
+  
+  For prediction we need to create a value for probabilities with the `predict` function used on the m1 model. A column is created for probability that contains the values of the probabilities created. A second new column is created for probabilities over 0.5, which estimates the high alcohol use to be TRUE. 
 ```{r}
 
 # predict() the probability of high_use
@@ -178,3 +210,21 @@ g + geom_point()
 
 table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table %>% addmargins
 ```
+
+
+### 3.4 Prediction Error
+  
+  Prediction error for the new model can be tested by creating a new function, though I do not entirely understand what is happening in it. The function contains two arguments class and prob on which it counts the mean of n_wrong. n_wrong is defined as `abs(class - prob) > 0.5` but what exactly that means is a mystery to me.  
+  
+```{r}
+# define a loss function (average prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = alc$probability)  
+```
+  
+  The average number of wrong predictions is 29% so we must take the predictive power with a grain of salt?
