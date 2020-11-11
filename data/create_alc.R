@@ -1,6 +1,6 @@
 # Jukke Kaaronen
 # Nov 9th 2020
-# Data wrangling exercise for IODS2020 learning2014 dataset
+# Data wrangling exercise for IODS2020
 # Data source:
 # https://archive.ics.uci.edu/ml/machine-learning-databases/00320/
 # Database citation:

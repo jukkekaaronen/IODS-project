@@ -80,6 +80,7 @@ xtabs(~ sex + high_use, data=alc)
 
 sexlog <- glm(high_use ~ sex, data = alc, family = "binomial")
 summary(sexlog)
+
 ```
   
 #### 2.3.2 Final Grade and Alcohol Use
