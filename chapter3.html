@@ -420,6 +420,7 @@ summary {
 
 <div id="chapter-3-logistic-regression" class="section level1">
 <h1>Chapter 3 Logistic Regression</h1>
+<p><em>This week I learned something about logistic regression and data wrangling to join datasets with common features. Again, the most frustrating part was trying to understand how to interpret statistics. There is still a lot to learn.</em></p>
 <div id="library" class="section level2">
 <h2>Library</h2>
 <pre class="r"><code>library(tidyverse)</code></pre>
@@ -507,6 +508,12 @@ P. Cortez and A. Silva. Using Data Mining to Predict Secondary School Student Pe
 </div>
 <div id="variable-counts" class="section level3">
 <h3>2.3 Variable counts</h3>
+<p>There are 114 observations of High Alcohol Use, and 268 observations of non-high use:</p>
+<pre class="r"><code>high_use &lt;- alc %&gt;% count(high_use)
+high_use</code></pre>
+<pre><code>##   high_use   n
+## 1    FALSE 268
+## 2     TRUE 114</code></pre>
 <div id="sex-and-alcohol-use" class="section level4">
 <h4>2.3.1 Sex and Alcohol Use</h4>
 <p>High use is distributed unequally between M (72/184)and F(42/198). First I check the possible values of sex with <code>distinct</code> to make sure nothing strange is in the dataset. I change the sex column into <code>factor</code> (not sure if necessary) check that it has worked with <code>str</code> and then proceed to <code>ggplot</code> with <code>geombar</code>. From this we see a differential distribution of alcohol use with regards to sex. This can also be seen in numbers with <code>xtabs</code>. A simple logistic regression with the generalised linear model <code>glm</code>, attributed with the argument <code>family = &quot;binomial&quot;</code>, which makes the function perform logistic regression, reveals a statistically significant relation with high alcohol use and sex in the dataset. The log(odds) for a female having high alcohol use (AU) is -1.3122 and the increase in log(odds) to a male having high AU is 0.8704. My intuitive hypothesis was wrong.</p>
@@ -616,7 +623,7 @@ summary(G3log)</code></pre>
 ## 
 ## Number of Fisher Scoring iterations: 4</code></pre>
 <p>The boxplot shows that interquartile ranges for grades in non-high alcohol users(AU) is more dispersed. There are more outliers in the low grades for high alcohol users. The median for non-high AU is higher than the 75th percentile for high AU suggesting there might be something of interest, as predicted in my hypothesis.<br />
-The <code>summary</code> for the glm model also shows some statistical signifcance in the relation.<br />
+The <code>summary</code> for the glm model also shows some statistical significance in the relation.<br />
 A quick look at alc_use and G3 on a scatterplot reveals that there is no linear regression between alcohol use and grades.</p>
 <pre class="r"><code>pG3b &lt;- ggplot(alc, aes(x = alc_use, y = G3))
 pG3b + geom_point() + geom_smooth(method = &quot;lm&quot;) + ggtitle(&quot;Distribution of Final Grade by Alchol Use&quot;) + labs(x = &quot;Alcohol Use&quot;, y = &quot;Final Grade&quot;)</code></pre>
@@ -769,7 +776,7 @@ summary(m)</code></pre>
 ## AIC: 444.75
 ## 
 ## Number of Fisher Scoring iterations: 4</code></pre>
-<p>Out of the four variables used to predict high AU, the final grade G3 performs the worst in the model and the low z value and high p-value suggest it is better to leave it out of the model, which is done in section 3.2.</p>
+<p>Out of the four variables used to predict high AU, the final grade G3 conditional on the other explanatory variables performs the worst in the model and the low z value and high p-value suggest it is better to leave it out of the model, which is done in section 3.2.</p>
 <div id="odds-ratio-and-confidence-interval" class="section level3">
 <h3>3.1 Odds Ratio and Confidence Interval</h3>
 <p>To get odds ratios we can apply the exponent function <code>exp</code> to the coefficients of the model and assign the output as <code>OR</code>. For confidence intervals use the <code>exp</code> and <code>confint</code> functions on the model.</p>
@@ -784,10 +791,11 @@ CI &lt;- confint(m) %&gt;% exp</code></pre>
 ## G3          0.9483869 0.8794608 1.0217987
 ## famrel      0.7538209 0.5873863 0.9658242
 ## sexM        2.5106222 1.5841230 4.0260443</code></pre>
-<p>What these mean. The exponents of the coefficients can be interpreted as odd ratios (<strong>OR</strong>) between a unit change (vs no change) in the explanatory variable.</p>
+<p>What these mean. The exponents of the coefficients can be interpreted as odd ratios (<strong>OR</strong>) for High AU between a unit change (vs no change) in the explanatory variable. The CI output is showing several 95% intervals. It is two-tailed, from the 2.5% point to the 97.5% point of the relevant distribution. These form the upper and lower limits of the intervals. The factor variables sex and failures show width in their distribution.</p>
 </div>
 <div id="new-model" class="section level3">
 <h3>3.2 New Model</h3>
+<p>For a new model I repeat the steps in the previous section, but omit G3 as an explanatory variable.</p>
 <pre class="r"><code>m1 &lt;- glm(high_use ~ failures + sex + famrel, data = alc, family = &quot;binomial&quot;)
 
 summary(m1)</code></pre>
@@ -828,18 +836,13 @@ CI1 &lt;- confint(m1) %&gt;% exp</code></pre>
 ## sexM        2.4905835 1.5736004 3.9879379
 ## famrel      0.7521293 0.5863812 0.9629022</code></pre>
 <pre class="r"><code>########################
-anova(m, m1, test =&quot;LRT&quot;)</code></pre>
-<pre><code>## Analysis of Deviance Table
-## 
-## Model 1: high_use ~ failures + G3 + famrel + sex
-## Model 2: high_use ~ failures + sex + famrel
-##   Resid. Df Resid. Dev Df Deviance Pr(&gt;Chi)
-## 1       377     434.75                     
-## 2       378     436.69 -1  -1.9393   0.1637</code></pre>
+# anova(m, m1, test =&quot;LRT&quot;)
+########################</code></pre>
+<p>The model performs better, but there is a low difference in the Null Deviance and Residual Deviance. This spells trouble. A look at how the model predicts reveals some of its problems in the next section.</p>
 </div>
 <div id="prediction" class="section level3">
 <h3>3.3 Prediction</h3>
-<p>For prediction we need to create a value for probabilities with the <code>predict</code> function used on the m1 model. A column is created for probability that contains the values of the probabilities created. A second new column is created for probabilities over 0.5, which estimates the high alcohol use to be TRUE.</p>
+<p>For prediction based on the model we need to create a value for probabilities with the <code>predict</code> function used on the m1 model. A column is created for probability that contains the values of the probabilities created. A second new column is created for probabilities over 0.5, which estimates the high alcohol use to be TRUE.</p>
 <pre class="r"><code># predict() the probability of high_use
 probabilities &lt;- predict(m1, type = &quot;response&quot;)
 
@@ -866,6 +869,20 @@ g + geom_point()</code></pre>
 ##    FALSE 0.66753927 0.03403141 0.70157068
 ##    TRUE  0.25392670 0.04450262 0.29842932
 ##    Sum   0.92146597 0.07853403 1.00000000</code></pre>
+<pre class="r"><code>alc &lt;- alc %&gt;% mutate(TEST = case_when(
+  high_use == FALSE &amp; prediction == FALSE ~ &quot;YAY&quot;,
+  high_use == TRUE &amp; prediction == TRUE ~ &quot;SWEET&quot;,
+  high_use == FALSE &amp; prediction == TRUE ~ &quot;NAY&quot;,
+  high_use == TRUE &amp; prediction == FALSE ~ &quot;DAMN&quot;))
+
+test_count &lt;- alc %&gt;% count(TEST)
+print(test_count)</code></pre>
+<pre><code>##    TEST   n
+## 1  DAMN  97
+## 2   NAY  13
+## 3 SWEET  17
+## 4   YAY 255</code></pre>
+<p>I had to mutate another column TEST to see the same results as in the prediction table to make sure (to myself) what predictions are going wrong and what are going right. The model is good at predicting non-high alcohol use. There are 255 correct predictions (the “YAY”s) and 13 incorrect predictions (the “NAY”s). The model is bad at predicting High Alcohol Use, with 17 correct predictions (“SWEET”) and 97 incorrect predictions (“DAMN”s). The overall amount of wrong predictions is 114/382. <em>Incidentally, this is the same ratio of High Alcohol Users. Does this mean something? Is it a double rainbow? It’s a double rainbow all the way. Oh man, woah. What does it mean?</em></p>
 </div>
 <div id="prediction-error" class="section level3">
 <h3>3.4 Prediction Error</h3>
@@ -879,7 +896,7 @@ loss_func &lt;- function(class, prob) {
 # call loss_func to compute the average number of wrong predictions in the (training) data
 loss_func(class = alc$high_use, prob = alc$probability)  </code></pre>
 <pre><code>## [1] 0.2879581</code></pre>
-<p>The average number of wrong predictions is 29% so we must take the predictive power with a grain of salt?</p>
+<p>The output gives the average number of wrong predictions as 0.29. While it may seem kind of decent, we have to remember how miserably the prediction worked for predicting TRUE High Use. So if we wanted to use this model for something, it would be okay at predicting non-high alcohol use (and as such, it could create a “risk group” for high alcohol use) but ultimately it is insufficient in predicting High Alcohol Use.</p>
 </div>
 </div>
 </div>

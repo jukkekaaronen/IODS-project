@@ -6,6 +6,8 @@ output: html_document
 ---
 # Chapter 3 Logistic Regression
 
+*This week I learned something about logistic regression and data wrangling to join datasets with common features. Again, the most frustrating part was trying to understand how to interpret statistics. There is still a lot to learn.*
+
 ## Library
 ```{r}
 library(tidyverse)
@@ -55,6 +57,13 @@ The purpose of this chapter is to study the relation of high/low alchol use with
 
 ### 2.3 Variable counts
 
+There are 114 observations of High Alcohol Use, and 268 observations of non-high use:  
+
+````{r}
+high_use <- alc %>% count(high_use)
+high_use
+```
+
 #### 2.3.1 Sex and Alcohol Use
   
   High use is distributed unequally between M (72/184)and F(42/198). First I check the possible values of sex with `distinct` to make sure nothing strange is in the dataset. I change the sex column into `factor` (not sure if necessary) check that it has worked with `str` and then proceed to `ggplot` with `geombar`. From this we see a differential distribution of alcohol use with regards to sex. This can also be seen in numbers with `xtabs`. A simple logistic regression with the generalised linear model `glm`, attributed with the argument `family = "binomial"`, which makes the function perform logistic regression, reveals a statistically significant relation with high alcohol use and sex in the dataset. The log(odds) for a female having high alcohol use (AU) is -1.3122 and the increase in log(odds) to a male having high AU is 0.8704. My intuitive hypothesis was wrong.  
@@ -86,7 +95,7 @@ summary(G3log)
 ```
   
   The boxplot shows that interquartile ranges for grades in non-high alcohol users(AU) is more dispersed. There are more outliers in the low grades for high alcohol users. The median for non-high AU is higher than the 75th percentile for high AU suggesting there might be something of interest, as predicted in my hypothesis.  
-  The `summary` for the glm model also shows some statistical signifcance in the relation.  
+  The `summary` for the glm model also shows some statistical significance in the relation.  
   A quick look at alc_use and G3 on a scatterplot reveals that there is no linear regression between alcohol use and grades.
   
 ```{r}
@@ -150,7 +159,7 @@ summary(m)
 
 ```
   
-  Out of the four variables used to predict high AU, the final grade G3 performs the worst in the model and the low z value and high p-value suggest it is better to leave it out of the model, which is done in section 3.2. 
+  Out of the four variables used to predict high AU, the final grade G3 conditional on the other explanatory variables performs the worst in the model and the low z value and high p-value suggest it is better to leave it out of the model, which is done in section 3.2. 
 
   
 ### 3.1 Odds Ratio and Confidence Interval
@@ -166,9 +175,12 @@ CI <- confint(m) %>% exp
 cbind(OR, CI)
 ```
   
-  What these mean. The exponents of the coefficients can be interpreted as odd ratios (**OR**) between a unit change (vs no change) in the explanatory variable. 
+  What these mean. The exponents of the coefficients can be interpreted as odd ratios (**OR**) for High AU between a unit change (vs no change) in the explanatory variable. The CI output is showing several 95% intervals.  It is two-tailed, from the 2.5% point to the 97.5% point of the relevant distribution. These form the upper and lower limits of the intervals. The factor variables sex and failures show width in their distribution.
 
 ### 3.2 New Model
+
+  For a new model I repeat the steps in the previous section, but omit G3 as an explanatory variable.  
+  
 ```{r}
 m1 <- glm(high_use ~ failures + sex + famrel, data = alc, family = "binomial")
 
@@ -181,14 +193,17 @@ OR1 <- coef(m1) %>% exp
 CI1 <- confint(m1) %>% exp
 
 cbind(OR1, CI1)
+
 ########################
-anova(m, m1, test ="LRT")
+# anova(m, m1, test ="LRT")
+########################
 ```
   
+  The model performs better, but there is a low difference in the Null Deviance and Residual Deviance. This spells trouble. A look at how the model predicts reveals some of its problems in the next section.
   
 ### 3.3 Prediction
   
-  For prediction we need to create a value for probabilities with the `predict` function used on the m1 model. A column is created for probability that contains the values of the probabilities created. A second new column is created for probabilities over 0.5, which estimates the high alcohol use to be TRUE. 
+  For prediction based on the model we need to create a value for probabilities with the `predict` function used on the m1 model. A column is created for probability that contains the values of the probabilities created. A second new column is created for probabilities over 0.5, which estimates the high alcohol use to be TRUE. 
 ```{r}
 
 # predict() the probability of high_use
@@ -209,8 +224,20 @@ g <- ggplot(alc, aes(x = probability, y = high_use, col = prediction))
 g + geom_point()
 
 table(high_use = alc$high_use, prediction = alc$prediction) %>% prop.table %>% addmargins
-```
 
+alc <- alc %>% mutate(TEST = case_when(
+  high_use == FALSE & prediction == FALSE ~ "YAY",
+  high_use == TRUE & prediction == TRUE ~ "SWEET",
+  high_use == FALSE & prediction == TRUE ~ "NAY",
+  high_use == TRUE & prediction == FALSE ~ "DAMN"))
+
+test_count <- alc %>% count(TEST)
+print(test_count)
+```
+  
+    
+  I had to mutate another column TEST to see the same results as in the prediction table to make sure (to myself) what predictions are going wrong and what are going right. The model is good at predicting non-high alcohol use. There are 255 correct predictions (the "YAY"s) and 13 incorrect predictions (the "NAY"s). The model is bad at predicting High Alcohol Use, with 17 correct predictions ("SWEET") and 97 incorrect predictions ("DAMN"s). The overall amount of wrong predictions is 114/382. *Incidentally, this is the same ratio of High Alcohol Users. Does this mean something? Is it a double rainbow? It's a double rainbow all the way. Oh man, woah. What does it mean?*
+  
 
 ### 3.4 Prediction Error
   
@@ -227,4 +254,4 @@ loss_func <- function(class, prob) {
 loss_func(class = alc$high_use, prob = alc$probability)  
 ```
   
-  The average number of wrong predictions is 29% so we must take the predictive power with a grain of salt?
+  The output gives the average number of wrong predictions as 0.29. While it may seem kind of decent, we have to remember how miserably the prediction worked for predicting TRUE High Use. So if we wanted to use this model for something, it would be okay at predicting non-high alcohol use (and as such, it could create a "risk group" for high alcohol use) but ultimately it is insufficient in predicting High Alcohol Use.
