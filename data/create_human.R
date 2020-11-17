@@ -60,6 +60,7 @@ human <- inner_join(hd, gii, by = "Country")
 str(human) # bigger
 colnames(human) # shorter
 dim(human) # desired
+is.na(human) # quick look at NA values reveals missing values but we'll probably deal with them somehow in next weeks task
 
 #write .csv
 

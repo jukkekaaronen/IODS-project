@@ -10,6 +10,8 @@ output: html_document
 ## Library
 
 ```{r}
+date()
+
 library(MASS)
 library(tidyverse)
 library(corrplot)
@@ -17,6 +19,8 @@ library(GGally)
 ```
 
 ## 1 The Boston Dataset
+  
+  Load the Boston dataset with `data()`.
 
 ```{r}
 data(Boston)
@@ -24,7 +28,7 @@ dim(Boston)
 str(Boston)
 ```
   
-  The Boston dataset contains 506 observations of 14 variables that contain residential, social, and environmental information of 506 towns in the Boston area. These include e.g median value of owner-occupied homes (medv), weighted mean of distances to five Boston employment centers (dis), per capita crime rate (crim) and nitrogen oxides concentration (nox). A full deescription for metadata can be found [here](https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html).
+  The Boston dataset contains 506 observations of 14 variables that contain residential, social, and environmental information of 506 towns in the Boston area. These include e.g median value of owner-occupied homes (medv), weighted mean of distances to five Boston employment centers (dis), per capita crime rate (crim) and nitrogen oxide concentration (nox). A full deescription for metadata can be found [here](https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/Boston.html).
   The Boston dataset for R is derived from two studies:  
   
   **Source:**  
@@ -49,7 +53,7 @@ pairs(Boston)
 summary(Boston)
 ```
   For example, the crime rate per capita differs between 0.006 and 88.976. The zoning (zn) indicates the proportion of residential land zoned for lots over 25,000 sq.ft. A difference between 0-100 means that some areas/towns are zoned to be more residential.  
-  The chas variable is described as a "Charles River dummy variable (= 1 if tract bounds river; 0 otherwise)" in the metadata. Here it is deviant because it operates on a binary 1/0 output. I omit it from the dataset.
+  The chas variable is described as a "Charles River dummy variable (= 1 if tract bounds river; 0 otherwise)" in the metadata. Here it is deviant because it operates on a binary 1/0 output (though loading the dataset treats it as an integer class. I omit it from the dataset.
   
 ```{r}
 b1 <- Boston[-4]
@@ -92,7 +96,7 @@ summary(b1_scaled)
   
   For the purposes of the assignment I create a new four category variable of the crime rate (crim). The observations are assigned in categories based on quantile break points.  
   A quantile vector can be created with the `quantile` function that produces the 0%,25%,50%, 75%, and 100% of a variable. A character vector is created that contains the names that are desired for the four categories.  
-  A new factor with 4 levels is created with the `cut()` function. The `breaks =` argument specifies the breaking points and `label =` argument the desired names for the categories. I create a new dataframe from omitting the old crime rate variable and replacing it with the new 4-category variable.
+  A new factor with 4 levels is created with the `cut()` function. The `breaks =` argument specifies the breaking points and `label =` argument the desired names for the categories. I create a new dataframe from omitting the old crime rate variable and replacing it with the new 4-category variable. Looking at the `str()` of the dataset reveals the new category to be a factor class with 4 levels.
 
 ```{r}
 qvec <- quantile(b1_scaled$crim)
@@ -102,12 +106,12 @@ crime <- cut(b1_scaled$crim, breaks = qvec, include.lowest = TRUE, label = nvec)
 
 b2 <- b1_scaled %>% dplyr::select(-crim)
 b2 <- data.frame(b2, crime)
-
+str(b2)
 ```
   
 ### 2.3 Creating Train and Test sets
 
-In this section the dataframe created in the past sections is divided randomly into training (80% of the dataframe) and testing (20% of the dataframe) datasets. This can be done with the `sample()` function that is specified with the argument `size =`. For the size argument I create the value **n** which is the number of observations (rows) * 0.8 in the b2 dataframe. Train and test sets are created by selecting the rows that are saved in `ind` (train set), and then subtracting the rows in `ind` for the test set. The train set now has 404 observations and the test set 102 observations.
+In this section the dataframe created in the past sections is divided randomly into training (80% of the dataframe) and testing (20% of the dataframe) datasets. This can be done with the `sample()` function. The sample size is specified with the argument `size =`. For the size argument I create the value **n** which is the number of observations (rows) * 0.8 in the b2 dataframe. Train and test sets are created by selecting the rows that are saved in `ind` (train set), and then subtracting the rows in `ind` to create the test set. The train set now has 404 observations and the test set 102 observations.
 
 ```{r}
 n <- nrow(b2)
@@ -123,7 +127,7 @@ dim(test)
 
 
 ```
-  Next a new value needs to be created for the correct crime classes in the test dataframe, because these will be removed from the dataframe.
+  In section 3.2 these sets will be used for prediction. A new value needs to be created for saving correct crime classes in the test dataframe, because these will be removed from the dataframe. (*Not to Self, here `dplyr::select` must be specified because of overlaps in the MASS package.*)
 
 ```{r}
 correct_classes <- test$crime
@@ -137,17 +141,17 @@ test <- dplyr::select(test, -crime)
 ### 3.1 Creating an LDA Model
   
 Linear Discriminant Analysis is a classification method that can be used to find variables that discriminate categorical classes, and predict the classes of new data. In this section LDA is performed on the categorical crime rate variable created in the previous sections.  
-An LDA formula is created with the `lda()` function. For the purposes of this task it will be predicted by all the other variables in the train dataframe.
+An LDA formula is created with the `lda()` function. It is specified with a target variable with the formula `lda(target ~ `. For the purposes of this task it will be predicted by all the other variables in the train dataframe. The results for the LDA model can be viewed by printing and plotting. The `lda.arrows` function that is created to complement the plot is magic as far as I'm concerned.
 
 
 ```{r}
 # linear discriminant analysis
 lda.fit <- lda(crime ~ ., data = train)
 
-# print the lda.fit object
-lda.fit
 
-# the function for lda biplot arrows
+print(lda.fit)
+
+# the function for lda biplot arrows (DataCamp exercise)
 lda.arrows <- function(x, myscale = 1, arrow_heads = 0.1, color = "red", tex = 0.75, choices = c(1,2)){
   heads <- coef(x)
   arrows(x0 = 0, y0 = 0, 
@@ -164,8 +168,9 @@ classes <- as.numeric(train$crime)
 plot(lda.fit, dimen = 2, col = classes, pch = classes)
 lda.arrows(lda.fit, myscale = 3)
 ```
-  LD1 axis accounts for the most variation between the categories. Here, especially the **rad** (index of accessibility to radial highways) variable stands out as a strong coefficient for the high crime rate category, which is fairly distinctly separated in the plot on the LD1 axis.  
-The LD2 axis accounts for the second most variation between the categories. Here, the **zn** (proportion of residential land zoned for lots over 25,000 sq.ft.) and **nox** (nitrogen oxides concentration) along with the **rad** are the strongest coefficients. The LD2 axis in the biplot shows some separation between the low, low_mid and mid_high categories though this separation is overlapping.
+
+  The LD1 axis accounts for the most variation between the categories. It's coefficients of linear discriminants are displayed in the `print()` of the LDA model. Here, especially the **rad** (index of accessibility to radial highways) variable stands out as a strong coefficient for the high crime rate category. This is distinctly visible in the plot on the LD1 axis (the red line racing out of the plot is the rad variable), resulting in a separated cluster of mostly high crime rates (with some med_high).  
+The LD2 axis accounts for the second most variation between the categories. Here, the **zn** (proportion of residential land zoned for lots over 25,000 sq.ft.) and **nox** (nitrogen oxides concentration) along with the **rad** are the strongest coefficients. The LD2 axis in the biplot shows some separation between the low, low_mid and mid_high categories though this separation is also considerably overlapping. If we are to ask what the data tells us, then we are probably looking at infrastructural and socio-environmental variables that separate between higher crime-rate urban areas with higher pollution (and guaranteed access to radial highways) and the sub-urb *sprawl of white picket fenced green lawns, where marital crime goes unreported, neighbours greet each other with daggers in their smiles, sizzling with repressed anger though too committed to their middle-class mediocrity to act on their violent urges.* Uh. Yeah the data does not *exactly* state that. Onwards!
 
 ## 3.2 Performing Prediction
 
@@ -179,13 +184,13 @@ lda.pred <- predict(lda.fit, newdata = test)
 table(correct = correct_classes, predicted = lda.pred$class)
 ```
   
-  A cross tabulation of the correct categories and the predicted categories shows that the LDA model was good at predicting high crime rate, making only 1 error. There were 17 correct predictions of med_high and 17 incorrect ones. 17 correct predictions of low_med and 10 incorrect. 12 correct predictions of low and 10 incorrect. Low crime rates were never predicted as high and vice versa, which is good.
+  A cross tabulation of the correct categories and the predicted categories shows that the LDA model was good at predicting high crime rate, ~~making only 1 error. There were 17 correct predictions of med_high and 17 incorrect ones. 17 correct predictions of low_med and 10 incorrect. 12 correct predictions of low and 10 incorrect. Low crime rates were never predicted as high and vice versa, which is good.~~ Heh, obviously since the sample is random these change every time the file is knitted! There is probably a way to code a descriptive output of the predictions, but I don't have the time to dive into it. Suffice to say, the prediction seems to do well for predicting high crime rate and make more errors in the other categories.
 
 ## 4 K-Means Clustering
 
 ### 4.1 Calculating Distance
   
-  To calculate distance use the `dist()` function. A summary shows the mean distance for all variables to be 4.91, but with quite a bit of variation.
+  To calculate distance use the `dist()` function. A summary shows the mean distance for all variables to be 4.91, but with quite a bit of variation in the Min (0.1343) and Max (14.3970) values. 
 
 ```{r}
 data("Boston")
@@ -198,7 +203,7 @@ summary(euclidean)
 ```
 ### 4.2 Running the k-means algorithm
 
-  To perform the `kmeans()` function it is good to know the number of optimal clusters first. This can be done by plotting the total within cluster sum of squares with the code below. The `qplot()` shows where the within cluster sum of squares falls radically and this indicates the optimal number of clusters. In this case the optimal number of clusters is small, with only 2 optimal clusters. The optimal number of clusters is attributed in the `centers =` argument of the `kmeans()` function.
+  To perform the `kmeans()` function it is good to know the number of optimal clusters first. This can be done by plotting the total within cluster sum of squares with the code below. The `ggplot()` shows where the within cluster sum of squares falls radically and this indicates the optimal number of clusters. In this case the optimal number of clusters is small, with only 2 optimal clusters. *Note to Self: When customising/scaling axes in ggplot() make sure whether axis is discrete or continuous* The optimal number of clusters is attributed in the `centers =` argument of the `kmeans()` function.
 
 ```{r}
 set.seed(123)
@@ -209,7 +214,10 @@ k_max <- 10
 # calculate the total within sum of squares
 twcss <- sapply(1:k_max, function(k){kmeans(b3, k)$tot.withinss})
 
-qplot(x = 1:k_max, y = twcss, geom = 'line')
+plotty <- cbind(1:k_max, twcss)
+plotty <- as.data.frame(plotty)
+ggplot(plotty, aes(x = V1, y = twcss)) + geom_line() + scale_x_continuous(breaks = c(1:10)) + labs(y = "Total Within Cluster Sum of Squares", x = "Number of Cluster Centers")
+
 
 # k-means clustering
 km <- kmeans(b3, centers = 2)
@@ -217,4 +225,9 @@ km <- kmeans(b3, centers = 2)
 pairs(b3, col = km$cluster)
 ```
 
-   This ~~clusterfuck~~ plot shows the 2 centered clusters in each variable pairing. In the previous section, I discussed how the accessibility index for radial highways (**rad**) was a strong coefficient in the LDA model. Here too, we see the 2 clusters from the k-means algorithm fairly well distinguished in the **rad** pairings. The same can be said, to a lesser extent, about the **tax**, **zn** and **nox**, for example. 
+   This ~~clustermess~~ plot shows the 2 centered clusters in each variable pairing. In the previous section, I discussed how the accessibility index for radial highways (**rad**) was a strong coefficient in the LDA model. Here too, we see the 2 clusters from the k-means algorithm fairly well distinguished in the **rad** pairings. The same can be said, to a lesser extent, about the **tax**, **zn** and **nox**, for example. A clearer plot is made with 6 variables below of some of the variables discussed in this chapter. Here again, we can see how the 2 clusters are distinguished in pairings. Clear red vs black clusters can be found in most of the pairings, meaning that the variables have factored in separating the clusters. For example, we can see the 2 clusters separated in the **crim** and **nox** pairing, where an increase in **nox** is related to an increase in **crim** and the clusters are distinguished in this relation.
+
+```{r}
+b4 <- dplyr::select(b3, crim, zn, nox, rad, lstat, medv)
+pairs(b4, col = km$cluster)
+```
