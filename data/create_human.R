@@ -29,7 +29,7 @@ hd <- rename(hd, GNIHDI = GNI.per.Capita.Rank.Minus.HDI.Rank)
 
 str(hd) # look at hd again
 
-# rawr stupid GNI has comma separators and is classed as character
+# rawr oh dear GNI has comma separators in the numerals and is classed as character
 
 hd$GNI <- sub(",", "", hd$GNI, fixed = TRUE) # substitute "," with nothing "" in hd$GNI
 hd$GNI <- as.numeric(hd$GNI) # change from character to numeric
@@ -41,14 +41,14 @@ gii <- rename(gii, GIIrank = GII.Rank)
 gii <- rename(gii, GII = Gender.Inequality.Index..GII.)
 gii <- rename(gii, MMR = Maternal.Mortality.Ratio)
 gii <- rename(gii, ABR = Adolescent.Birth.Rate)
-gii <- rename(gii, FPR = Percent.Representation.in.Parliament)
+gii <- rename(gii, PRPF = Percent.Representation.in.Parliament) # this is female percentage
 gii <- rename(gii, EDU2M = Population.with.Secondary.Education..Male.)
 gii <- rename(gii, EDU2F = Population.with.Secondary.Education..Female.)
 gii <- rename(gii, LABF = Labour.Force.Participation.Rate..Female.)
 gii <- rename(gii, LABM = Labour.Force.Participation.Rate..Male.)
 
 # check str again
-str(gii) #no stupid comma separators in this one
+str(gii) #no silly comma separators in this one
 
 # create new variables: ratio of EDU2F and EDU2M
 # and ratio of LABF and LABM
