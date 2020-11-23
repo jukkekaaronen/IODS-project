@@ -1,0 +1,192 @@
+---
+title: "chapter5"
+author: "Jukke Kaaronen"
+date: "23/11/2020"
+output: html_document
+---
+
+# Chapter 5 Dimensionality Reduction Techniques
+
+## Library
+
+```{r}
+library(tidyverse)
+library(GGally)
+library(corrplot)
+```
+
+
+## Human Dataset
+
+  Load the dataset modified in last weeks wrangling exercise and assign it as `human`
+
+```{r}
+setwd("C:/Users/Jukke/OneDrive/Työpöytä/IODS/IODS-project/data")
+human <- read.csv("human2.csv")
+rownames(human) <- human$X
+human <- dplyr::select(human, -X)
+```
+
+  Check the `str`ucture of the dataset:
+  
+```{r}
+str(human)
+```
+
+  The dataset contains `r nrow(human)` observations of `r ncol(human)` variables. The dataset is derived by joining two original datasets of the [Human Development](http://hdr.undp.org/en/content/human-development-index-hdi) Index (HDI) and Gender Inequality Index (GII).
+  Technical data for the HDI and GII can be found below:
+
+* [Technical Data for HDI](http://hdr.undp.org/sites/default/files/hdr2019_technical_notes.pdf)
+* [Technical Data for GII](http://hdr.undp.org/sites/default/files/hdr2015_technical_notes.pdf)
+
+### Variables
+
+  Variables for the derived dataset include:
+  
+* LEB: Life Expectancy at Birth
+* EDUexpect: Expected years of education
+* GNI: Gross national income per capita
+* MMR: Maternal Mortality Ratio: deaths per 100,000 live births
+* ABR: Adolescent birth rate: births per 1,000 women ages 15–19
+* PRPF: Percentage of representation in parliament (female percentage)
+* EDU2ratio: Ratio of proportion (percent) of female with secondary education and proportion (percent) of male with secondary education
+* LABratio: Ratio of proportion (percent) of female in labour force participation and proportion (percent) of male in labour force participation
+
+  The variables are observed by country, which are stored as `rownames` in the dataframe.
+
+## Variables
+
+  In this section I provide graphical overviews for the variables and their relation.
+  
+```{r}
+summary(human)
+ggpairs(human)
+```
+
+  The density plots in the figure above suggest that the GNI, MMR, ABR, and PRPF variables have a particularly unequal distribution. This means that many observations in, for example the GNI variable, are similar but weighted towards one of the extremes. There are numerous statistically significant correlations between the variables. The LABratio and PRPF have the least significant correlations in the variable pairings. Many of the scatterplots, for example, ABR and MMR, reveal some linear regression. A correlation plot between the variables is produced below. Here, big dark red and blue circles indicate negative and positive correlation respectively. The same discussion of observations regarding the LABratio and PRPF apply, in that their correlations are less signifcant. Strong negative correlations include, e.g. the relation between life expectancy at birth (LEB) and maternal mortality ratio (MMR). Positive correlations include, for example, life expectancy at birth (LEB) and expected years in education (EDUexpect).
+
+```{r}
+cor(human) %>% corrplot()
+```
+  
+## Principal Component Analysis
+
+Principal component analysis (PCA) is a dimension reduction technique. It can be used to identify variables that are related to the same underlying dimension (that is hidden in the data). These can then be reduced to reduce the amount of unnecessary noise in the data by focusing on essential dimensions. The data is transformed into a space with new dimensions, and these dimensions (principal components) are ordered by the amount of variance they capture.  
+
+### PCA on non-standardized dataset
+
+  In this section I perform PCA on the non-standardized (i.e. not scaled) dataset. The `prcomp()` function in R performs PCA with the singular valued decomposition method (SVD). The function is performed on the human dataset and assigned as `pca_human` which is then plotted with `biplot()`. To show the variability captured by the components, a `summary()` of the `pca_human` is assigned as a value. The second row of the summary (i.e. the variability numbers) are multiplied by 100 to get a percentage figure, and rounded, these are assigned as `pca_pr`. To get the values on the x and y axis of the plots, an object `pc_lab` that pastes the names of `pca_pr` and their values is created. The `xlab =` and `ylab =` arguments are attributed with the first and second observations of this new object.
+  
+```{r}
+pca_human <- prcomp(human)
+
+s <- summary(pca_human)
+
+# rounded percentages of variance captured by each PC
+pca_pr <- round(100*s$importance[2,], digits = 1) 
+
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr), " (", pca_pr, "%)")
+
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_human, cex = c(0.5, 1), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2], sub = "Biplot of Non-Scaled Datasets not Really Working Well")
+```
+
+  Working with a non-stanrdadized dataset has resulted in the PC1 component to account for 100% of the variance and all variables (or features) contributing on the same axis. GNI, with by far the highest standard deviation (signified also by arrow length) is the only stand out variable, and we can see countries with high GNI per capita (e.g. Qatar and Kuwait) as opposed to low GNI countries (e.g. Chad and Sierra Leone) on the PC1 axis of the plot.
+
+### Standardising/scaling the Dataset
+  
+Scaling the dataset can provide different principal components. As with last weeks exercise, scaling is done with the `scale()` function, and performing the PCA and creating the biplot is repeated on the scaled dataset. The biplot is significantly different to the non-standardized plot, because now the variable observations are standardized to reduce variation (and their disproportionate effect, as with GNI in the previous section).
+
+```{r}
+human_std <- scale(human)
+
+pca_std <- prcomp(human_std)
+s1 <- summary(pca_std)
+# rounded percentages of variance captured by each PC
+pca_pr1 <- round(100*s1$importance[2,], digits = 1) 
+
+# print out the percentages of variance
+pca_pr1
+
+# create object pc_lab to be used as axis labels
+pc_lab <- paste0(names(pca_pr1), " (", pca_pr1, "%)")
+# draw a biplot of the principal component representation and the original variables
+biplot(pca_std, cex = c(0.5, 1), col = c("grey40", "deeppink2"), xlab = pc_lab[1], ylab = pc_lab[2], sub = "Biplot of Human Development (PC1) and Female Participation in the Public Sphere (PC2)")
+
+```
+  
+  A printed out summary of the PC percentages shows that more components now account for the variance. A biplot of the standardised dataset reveals how variables relate to the first and second principal components. The PC1 component, which accounts for 53.6% of the variance, has 6 contributing variables (or features). These can be seen from the arrows going in the direction of the PC1 axis (x axis). They include the 4 variables of EDU2ratio, EDUexpect, GNI, LEB, which all had positive correlation with each other in the the correlation plot and the 2 variables MMR and ABR, which had negative correlation with the previous 4 variables (and positive correlation with each other). The big angle between the two groups' arrows (almost 180 degrees) also illustrates this.    
+  The PC2 component, which accounts for 16.2% of the variance, has 2 contributing variables: the LABratio and PRPF. These two variables, as discussed earlier, have less correlation with the other 6 variables (and therefore the arrows are in an almost 90 degree angle as well).  
+  **Interpreting** the PC1 and PC2 dimensions is not perhaps as straightforward as it may seem. In general, the PC1 dimension holds observations that correlate strongly with each other (either positively or negatively). These include educational variables, gross national income per capita, as well as maternal mortality and adolescent birth rate variables. Roughly put, these seem to separate countries into the traditional cline of "first and third-world" countries by development factors. The PC2 dimension is perhaps more interesting, because it takes into account the sexes participation in the public sphere (ratio of labour force participation and parliamentary participation of women), variables that did not correlate strongly with the previously mentioned PC1 features. This dimension is capable of separating, for example between Yemen (low female participation) and Rwanda (high female participation). We might, again, roughly guesstimate, that for example religious and cultural tenets, doctrines and attitudes towards sex, might be a social factor in this dimension. The plot separates somewhat clearly between countries where islam is the dominant religion (bottom left half) and african countries with dominant religion christianity (top right half). The nordic countries are located towards the top left corner with the rest of the 1st world beneath them. Based on this discussion I have included the plot with the caption "Biplot of Development (PC1) and Female Participation in the Public Sphere (PC2)" that captures my personal interpretation.  
+  
+## Multiple Correspondence Analysis
+
+### Tea Time
+
+  For the last part of this weeks exercise we deal with multiple correspondence analysis using the `FactorMineR` package and load a mysterious tea dataset.
+  
+```{r}
+library(FactoMineR)
+data(tea)
+```
+
+The tea dataset looks as follows with `r nrow(tea)` observations of `r ncol(tea)` variables:
+
+```{r}
+dim(tea)
+str(tea)
+```
+Most variables are factor classes with 2 levels (effectively yes and no, e.g., healthy vs. not.healthy) but we don't really know what they are about. Let's look at `?tea` for some clues.  
+**Description** (from R using `?tea`):  
+The data used here concern a questionnaire on tea. We asked to 300 individuals how they drink tea (18 questions), what are their product's perception (12 questions) and some personal details (4 questions).  
+..Unfortunately, this is not saying a whole lot about the variables themselves, and we don't know what these variables actually mean in terms of what questions were asked.  
+**Format**:  
+Rows represent the individuals, columns represent the different questions. The first 18 questions are active ones, the 19th is a supplementary quantitative variable (the age) and the last variables are supplementary categorical variables.  
+  
+  So we are dealing with observations made from a tea questionnaire. Are you *teaming* with excitement? Or is the subject *earl* too *grey* and boring for you? Would you like to *chaime* in with your own remarks? By the way, I fully expect bonus points for these puns. Especially the earl grey one *(pats self on back)*  
+  **A summary of tea**:
+
+```{r}
+summary(tea)
+```
+This is a long summary of tea with amounts of observations for each variable category. Let's reduce the amount of variables in the next section. We don't want our tea going cold waiting on our results, *cupish*?  
+
+### MCA
+
+  Since the study was a questionnaire on how the respondents drink tea, we might be interested in the cleverly differentiated How (tea alone, with lemon, with milk, or other) and how (teabag, unpackaged, or both) categories. We might also be interested in respondents age group and sex, as well as their thoughts on how sophisticated and feminine tea drinking is. First, `select()` the desired variables and then perform multiple correspondence analysis with the `MCA()` function. But first, lets visualize by plotting our variables. 
+```{r}
+tea_time <- dplyr::select(tea, How, how, age_Q, sex, sophisticated, feminine)
+
+gather(tea_time) %>% ggplot(aes(value)) + facet_wrap("key", scales = "free") + geom_bar() + theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+
+  So drinking tea unpackaged is a rather fringe method, but Drinking tea alone (*and let's hope this means drinking tea without anything else addded into it except for maybe sugar which was a separate variable.. and not drinking tea without company which would be a silly category*) seems the most common Method. People seem to think drinking tea is sophisticated but are less agreeing on whether there is an element of femininity to it. A summary of the MCA of this dataset looks like this:
+
+```{r}
+mca_tea <- MCA(tea_time, graph = FALSE)
+
+
+summary(mca_tea)
+```
+  
+The Eigenvalue table shows the variances of the dimensions and the percentage of variance retained by each dimension. The analysis found 12 dimensions and the first dimension retains 13.22% of variance. So it is not a remarkably high amount.  
+The categories table shows the first ten categories of our variables and their contribution (ctr) to the first three dimensions. For example, the category of age group 25-34 (9.56) contributed significantly to the first dimension and its v.test value (7.67) is also significant (above/below +- 1.96). The excessively wild category of drinking tea unpackaged was a big contributor in dimension 2 (29.42).  
+The categorical variables (eta 2) table shows the squared correlation between the selected variables and the three first dimensions. The closer the figure is to 1, the more the stronger link there is between the variable and dimension. Here, none of the variables are particularly close, but the sex (.58) and feminine (.57), for example, have the strongest link with the first dimension.
+
+### Plotting MCA 
+
+The MCA can also be plotted: 
+
+```{r}
+plot(mca_tea, cex = 0.6, invisible=c("ind"), habillage = "quali")
+```
+  
+This plot shows the categories of the variables on the Dimension 1 and Dimension 2 axes. We can see for example, how strongly the unpackaged category is separated on the Dim 2 axis, meaning it is different from the other categories (hence the ~~technical~~ term, wild). But if you think about it. Sidenote. For someone to answer they only drink unpackaged tea in a questionnaire, you might think that this is *performing* a very specific and niche identity, not unlike that of a *connoisseur*.  
+Additionally, we can see the relation between pairs of categories in the biplot. For example, age group 45-59 and sophisticated is close. Drinking tea with milk and tea drinking as not feminine is closer that drinking tea alone and tea drinking as not feminine.  
+**More interpretation**: If we identified the *connoisseur*, let's also look for the average citizen! Check out the +- 0.5 zone! The categories there include the sophisticated, 35-44, 45-59. alone, tea bag(+unpackaged) and milk categories, what a cluster! How much more average can you get? You guys suck! - the connoisseur, probably.  
+  
+
+
+
