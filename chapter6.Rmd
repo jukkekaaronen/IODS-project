@@ -150,7 +150,8 @@ ggplot(RATS10, aes(x = Group, y = mean)) +
   stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
   scale_y_continuous(name = "mean(weight), days 8-64")
 ```
-So not only is Rat No. 12 causing trouble, so are the two outliers in Group 1 and Group 3 as well! We know these are the lightest rats in their respective groups so lets find them.
+
+So not only is Rat No. 12 outlieing the cheese out of Group 2, so are the two outliers in Group 1 and Group 3 as well! We know these are the lightest rats in their respective groups so lets find them.
 
 ```{r}
 wee_rat_finder <- long_RATS %>% filter(Time == 1 & Group != 2)
@@ -168,22 +169,42 @@ ggplot(RATS10_purged, aes(x = Group, y = mean)) +
   scale_y_continuous(name = "mean(weight), days 8-64")
 ```
 
-Well did what we came to do, now we have 7 rats in group 1 and 3 rats in group 3 with very little variation. Not sure what to say about this, I sort of miss the 3 rats we got rid off.
+Well did what we came to do, now we have 7 rats in group 1 and 3 rats in groups 2 and 3 with very little variation and not outliers. Not sure what to say about this, I sort of miss the 3 rats we got rid off.
 
 
 ## Rat T-tests and ANOVA
 
 ```{r}
-t.test(mean ~ treatment, data = BPRSL8S1, var.equal = TRUE)
+TT_RATS12 <- RATS10_purged %>% filter(Group != 3)
+TT_RATS12$Group <- as.integer(TT_RATS12$Group)
+TT_RATS12$Group <- as.factor(TT_RATS12$Group)
+t.test(mean ~ Group, data = TT_RATS12, var.equal = TRUE)
 
-# Add the baseline from the original data as a new variable to the summary data
-BPRSL8S2 <- BPRSL8S %>%
-  mutate(baseline = BPRS$week0)
+TT_RATS13 <- RATS10_purged %>% filter(Group != 2)
+TT_RATS13$Group <- as.integer(TT_RATS13$Group)
+TT_RATS13$Group <- as.factor(TT_RATS13$Group)
+t.test(mean ~ Group, data = TT_RATS13, var.equal = TRUE)
+
+TT_RATS23 <- RATS10_purged %>% filter(Group != 1)
+TT_RATS23$Group <- as.integer(TT_RATS23$Group)
+TT_RATS23$Group <- as.factor(TT_RATS23$Group)
+t.test(mean ~ Group, data = TT_RATS23, var.equal = TRUE)
+```
+
+So uh, now we need to go back a bit and uh, do something uh. With the original RATS dataset, which we load. We add the first day of observations as a base line.
+
+```{r}
+RATS <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt", sep = "\t", header = TRUE)
+RATS$ID <- as.factor(RATS$ID)
+RATS$Group <- as.factor(RATS$Group)
+RATS_baselined <- RATS10 %>%
+  mutate(baseline = RATS$WD1)
 
 # Fit the linear model with the mean as the response 
-fit <- lm(mean ~ baseline + treatment, data = BPRSL8S2)
+lm_RATS <- lm(mean ~ baseline + Group, data = RATS_baselined)
 
 # Compute the analysis of variance table for the fitted model with anova()
-t.test(mean ~ treatment, data = BPRSL8S2, var.equal = TRUE)
+anova(lm_RATS)
+t.test(mean ~ Group, data = RATS_baselined, var.equal = TRUE)
 ```
 
