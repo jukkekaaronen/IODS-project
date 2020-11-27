@@ -202,7 +202,7 @@ RATS_baselined <- RATS10 %>%
 
 # Fit the linear model with the mean as the response 
 lm_RATS <- lm(mean ~ baseline + Group, data = RATS_baselined)
-
+summary(lm_RATS)
 # Compute the analysis of variance table for the fitted model with anova()
 anova(lm_RATS)
 t.test(mean ~ Group, data = RATS_baselined, var.equal = TRUE)
