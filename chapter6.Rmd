@@ -1,0 +1,189 @@
+---
+author: "Jukke Kaaronen"
+title: "Chapter 6"
+date: "27/11/2020"
+output: html_document
+---
+
+# Library
+```{r}
+library(tidyverse)
+library(knitr)
+```
+
+# Data
+
+## Load datasets
+
+```{r}
+setwd("C:/Users/Jukke/OneDrive/Työpöytä/IODS/IODS-project/data")
+long_BPRS <- read.table("long_BPRS.txt", sep = ",", header = TRUE)
+long_RATS <- read.table("long_RATS.txt", sep = ",", header = TRUE)
+str(long_BPRS)
+str(long_RATS)
+```
+## Minor Wrangles
+
+Need to change category variables to factors:
+
+```{r}
+long_RATS$ID <- as.factor(long_RATS$ID)
+long_RATS$Group <- as.factor(long_RATS$Group)
+long_BPRS$treatment <- as.factor(long_BPRS$treatment)
+long_BPRS$subject <- as.factor(long_BPRS$subject)
+str(long_BPRS)
+str(long_RATS)
+
+```
+
+Great.
+
+# RATS!
+
+## Rat
+
+Ok, so the aim here is to follow the steps in chapter 8 of Vehkalahti & Everitt (2019) and perform analysis on the dataset about rats. The rats dataset contains `r nrow(long_RATS)` of rat weights (in grams) that are complemented with information of rat subject (16 rat subjects) and its test group (rats assigned in 3 groups) over a time of 64 days. Below, a table of the first, 10th, 20th, .. and 50th observation of the `long_RATS` dataset, printed with `kable()` from the `knitr` package.
+
+```{r}
+kable(long_RATS[c(1,10,20,30,40,50),], caption = "Rats, so many rats!")
+```
+
+For some good luck, let's look at the observations of Rat No. 13:
+
+```{r}
+kable(long_RATS[long_RATS$ID == "13",])
+```
+
+So Rat No. 13 belongs to the Group 3 and we have 11 observations of its weight development, which increases from `r long_RATS$Weight[13]` to `r long_RATS$Weight[173]` over the course of the time period. So unless they are hitting the gym, there appears to be some rat fattening going on in this dataset. Who else belongs to Group 3? Let's have a look at the number of rats in each group:
+
+```{r}
+rat_per_group <- long_RATS %>% filter(Time == 1) %>% group_by(Group) %>% count() %>% rename("Rats in Group" = n) %>% ungroup()
+kable(rat_per_group, caption = "Rats Numbers in 3 Groups")
+```
+
+
+## Plotting the Rat Fattening
+
+First, lets plot our rodents gaintrails with a `geom_line()` plot of their fattening over the 64 day time period. Here the plots are faceted by the three groups discussed above, and we can see how the rats gain weight (and sometimes also lose weight) between the measurements. In this plot I use the argument `linetype =` to specify we want the line types following the Rat ID. In `scale_x_continuous()` I define the argument `breaks =` to contain the measurement days of the dataset and give them names accordingly in the `labels =` argument.  
+In general, the all the rats seem to gain weight during the time period. Weight gain seems to be larger in groups 2 and 3. Note that there were two consecutive measurements on day 43 and 44, where most rats in group 2 and 3 exhibit a rapid increase in weight, suggesting, perhaps, that *somebody put something in their drink*.
+
+```{r}
+ggplot(long_RATS, aes(x = Time, y = Weight, linetype = ID)) +
+  geom_line(aes(col = ID)) + scale_linetype_manual(values = rep(1:8, times=2)) +
+  facet_grid(. ~ Group, labeller = label_both) + 
+  scale_y_continuous(limits = c(min(long_RATS$Weight), max(long_RATS$Weight))) +
+  scale_x_continuous(breaks = c(1,8,15,22,29,36,43,44,50,57,64), labels = c("1", "8", "15", "22", "29", "36", "4344", "", "50", "57", "64")) +
+  theme_bw() + labs(y = "Weight (grams)", x = "Time (days)") + theme(legend.position = "none", axis.text.x = element_text(angle = 0)) + ggtitle("Rat Fattening in Groups by ID")
+```
+
+Each group also has a bit of an outlier. The outlier in Group 2 is a particularly blubbery rat. Let's see if we can find this beast of a unit, which should be easy as from the plot we see it is the only rat that exceeds the respectable size of 600 grams.
+
+```{r}
+fat_rat <- long_RATS %>% filter(Weight > 600) %>% dplyr::select(ID)
+fat_rat[2,]
+```
+So it's Rat No. 12. I have a hunch this plague bringer may cause some trouble up ahead. But first, let's standardize the `long_RATS` dataset to see if something changes.
+
+### Standardizing the Rat Fattening
+
+As we have learned, to standardize a dataset we need to substract the relevant occasion (i.e. measuring day) column mean divided by column standard deviation from the column. This can be done with either the `mean()` and `sd()` functions or use the `scale()` function which gives the same results after the data is `group_by()` the relevant occasion.
+
+```{r}
+long_RATS_w_std <- long_RATS %>%
+  group_by(Time) %>%
+  mutate(Weight_std = scale(Weight)) %>%
+  ungroup()
+```
+
+Now we have a dataset of rats ~~ with sexually transmitted diseases~~ with standardized weights in a new column. So let's plot it with the same code as above. In general, the rats maintain their relevant position with regards to each other. Group 1 is significantly lighter, remaining in the (-1 area), Group 2 maintains it's position (with Rat No. 12 as the outlier) and Group 3 has the highest distance from the mean at over 1:
+
+
+```{r}
+ggplot(long_RATS_w_std, aes(x = Time, y = Weight_std, linetype = ID)) +
+  geom_line(aes(col = ID)) + scale_linetype_manual(values = rep(1:8, times=2)) +
+  facet_grid(. ~ Group, labeller = label_both) + 
+  scale_y_continuous(limits = c(min(long_RATS_w_std$Weight_std), max(long_RATS_w_std$Weight_std))) +
+  scale_x_continuous(breaks = c(1,8,15,22,29,36,43,44,50,57,64), labels = c("1", "8", "15", "22", "29", "36", "4344", "", "50", "57", "64")) +
+  theme_bw() + labs(y = "Weight (standardized)", x = "Time (days)") + theme(legend.position = "none", axis.text.x = element_text(angle = 0)) + ggtitle("Standardized Rat Fattening in Groups by ID")
+```
+### Mean Profiles
+
+Average profiles for each Rat Pack can also be plotted. For this we need to also count the standard error, which is `sd(x) / sqrt(n of relevant occasions)`.
+
+```{r}
+n <- long_RATS$Time %>% unique() %>% length()
+
+l_RATS_summary <- long_RATS %>%
+  group_by(Group, Time) %>%
+  summarise( mean = mean(Weight), se = sd(Weight) / sqrt(n)) %>%
+  ungroup()
+
+
+# Plot the mean profiles
+ggplot(l_RATS_summary, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(aes(col = Group), size=5) +
+  scale_shape_manual(values = c("circle","square","triangle")) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=2) +
+  scale_y_continuous(name = "Mean(weight) +/- Standard Error(weight)") + 
+  scale_x_continuous(breaks = c(1,8,15,22,29,36,43,44,50,57,64), labels = c("1", "8", "15", "22", "29", "36", "4344", "", "50", "57", "64")) +
+  theme_bw() + theme(legend.position = c(0.9,0.5))
+```
+From this plot we see  the 3 groups do not overlap. Group 2 has the most has the largest standard error.
+
+### 
+
+```{r}
+RATS10 <- long_RATS %>%
+  filter(Time > 1) %>%
+  group_by(Group, ID) %>%
+  summarise(mean=mean(Weight) ) %>%
+  ungroup()
+
+# Glimpse the data
+glimpse(RATS10)
+
+# Draw a boxplot of the mean versus treatment
+ggplot(RATS10, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(weight), days 8-64")
+```
+So not only is Rat No. 12 causing trouble, so are the two outliers in Group 1 and Group 3 as well! We know these are the lightest rats in their respective groups so lets find them.
+
+```{r}
+wee_rat_finder <- long_RATS %>% filter(Time == 1 & Group != 2)
+kable(wee_rat_finder)
+```
+
+Ah, so it's Rat No. 2 (at a featherweight 225) and Rat No. 13 (at 470 grams). So if we want to get rid of the outliers we need to let go of these wee beasts and Rat No. 12.
+
+```{r}
+RATS10_purged <- RATS10 %>% filter(ID != 2 & ID != 12 & ID != 13) # Bye you little rascals!
+
+ggplot(RATS10_purged, aes(x = Group, y = mean)) +
+  geom_boxplot() +
+  stat_summary(fun.y = "mean", geom = "point", shape=23, size=4, fill = "white") +
+  scale_y_continuous(name = "mean(weight), days 8-64")
+```
+
+Well did what we came to do, now we have 7 rats in group 1 and 3 rats in group 3 with very little variation. Not sure what to say about this, I sort of miss the 3 rats we got rid off.
+
+
+## Rat T-tests and ANOVA
+
+```{r}
+t.test(mean ~ treatment, data = BPRSL8S1, var.equal = TRUE)
+
+# Add the baseline from the original data as a new variable to the summary data
+BPRSL8S2 <- BPRSL8S %>%
+  mutate(baseline = BPRS$week0)
+
+# Fit the linear model with the mean as the response 
+fit <- lm(mean ~ baseline + treatment, data = BPRSL8S2)
+
+# Compute the analysis of variance table for the fitted model with anova()
+t.test(mean ~ treatment, data = BPRSL8S2, var.equal = TRUE)
+```
+
