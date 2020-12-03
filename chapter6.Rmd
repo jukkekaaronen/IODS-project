@@ -46,20 +46,20 @@ The aim of the first part of this exercise here is to follow the steps in chapte
 The rats dataset contains `r nrow(long_RATS)` observations of rat weights (in grams) that are complemented with information of rat subject (16 rat subjects) and its test group (rats assigned in 3 groups) over a time of 64 days. Below, a table of the first, 10th, 20th, .. and 50th observation of the `long_RATS` dataset, printed with `kable()` from the `knitr` package.
 
 ```{r}
-kable(long_RATS[c(1,10,20,30,40,50),], caption = "Rats, so many rats!", row.names = FALSE)
+kable(long_RATS[c(1,10,20,30,40,50),], caption = "Rats, so many rats!", row.names = FALSE, align = "ccccc")
 ```
 
 For some good luck, let's look at the observations of Rat No. 13:
 
 ```{r}
-kable(long_RATS[long_RATS$ID == "13",], row.names = FALSE)
+kable(long_RATS[long_RATS$ID == "13",], row.names = FALSE, align = "ccccc")
 ```
 
 So Rat No. 13 belongs to the Group 3 and we have 11 observations of its weight development, which increases from `r long_RATS$Weight[13]` to `r long_RATS$Weight[173]` over the course of the time period. So unless they are hitting the gym, there appears to be some rat growth going on in this dataset. Who else belongs to Group 3? Let's have a look at the number of rats in each group.
 
 ```{r}
 rat_per_group <- long_RATS %>% filter(Time == 1) %>% group_by(Group) %>% count() %>% rename("Rats in Group" = n) %>% ungroup()
-kable(rat_per_group, caption = "Rats Numbers in 3 Groups", row.names = FALSE)
+kable(rat_per_group, caption = "Rats Numbers in 3 Groups", row.names = FALSE, align = "cc")
 ```
 
 Group 1 has eight rats while Groups 2 and 3 have four rats each.
@@ -112,9 +112,10 @@ ggplot(long_RATS_w_std, aes(x = Time, y = Weight_std, linetype = ID)) +
 
 ### 2.2.2 Mean Profiles
 
-Average profiles for each Rat Pack can also be plotted. For this we need to also count the standard error, which is `sd(x) / sqrt(n, where n is the size (number of observations) of the sample)`. There was some discussion about this on the course forum where a student pointed out that the standard error used in the DataCamp example was, in fact, not correct. So I put together two alternatives, done below.
+Average profiles for each Rat Pack can also be plotted. For this we need to also count the standard error, which is `sd(x) / sqrt(n, where n is the size (number of observations) of the sample)`. There was some discussion about this on the course forum where a student pointed out that the standard error used in the DataCamp example was, in fact, not correct. So I put together two alternatives, done below. The datacamp code uses n as the amount of observation times, but apparently it is slightly more clever to use n as the number of observations in a group per time. So we would want n to be 8 for group 1 and 4 for groups 2 and 3.
 
 ```{r}
+# The DataCamp way:
 n <- long_RATS$Time %>% unique() %>% length()
 
 l_RATS_summarya <- long_RATS %>%
@@ -124,16 +125,25 @@ l_RATS_summarya <- long_RATS %>%
 
 # The other way:
 
-n1 <- long_RATS %>% filter(Group == 1) %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
-n2 <- long_RATS %>% filter(Group == 2) %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
-n3 <- long_RATS %>% filter(Group == 3) %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
+n1 <- long_RATS %>% filter(Group == "1") %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
+n2 <- long_RATS %>% filter(Group == "2") %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
+n3 <- long_RATS %>% filter(Group == "3") %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
 
 l_RATS_summaryb <- long_RATS %>%
   group_by(Group, Time) %>%
-  summarise( mean = mean(Weight), se = sd(Weight) / sqrt(case_when(Group == 1 ~ n1,
-                                                                   Group == 2 ~ n2,
-                                                                   Group == 3 ~ n3))) %>% distinct() %>% ungroup()
+  summarise( mean = mean(Weight), se = sd(Weight) / sqrt(case_when(Group == "1" ~ n1,
+                                                                   Group == "2" ~ n2,
+                                                                   Group == "3" ~ n3))) %>% distinct() %>% ungroup()
 
+# This is extra code saving for later
+#n4 <- as.integer(distinct(select(ungroup(count(group_by(filter(long_RATS, Group == 1), Group, Time))),n)))
+#
+#l_RATS_summaryc <- long_RATS %>%
+#  group_by(Group, Time) %>%
+#  summarise( mean = mean(Weight), se = sd(Weight) / sqrt(case_when(Group == "1" ~ #as.integer(distinct(select(ungroup(count(group_by(filter(long_RATS, Group == "1"), Group, Time))),n))),
+#                                                                   Group == "2" ~ #as.integer(distinct(select(ungroup(count(group_by(filter(long_RATS, Group == "2"), Group, Time))),n))),
+#                                                                   Group == "3" ~ #as.integer(distinct(select(ungroup(count(group_by(filter(long_RATS, Group == "3"), Group, Time))),n)))))) #%>% distinct() %>% ungroup()
+# /extra code
 ```
 
 **The DataCamp way:**
@@ -166,11 +176,11 @@ ggplot(l_RATS_summaryb, aes(x = Time, y = mean, linetype = Group, shape = Group)
 
 
 
-  The main difference is that in "Mean Profile 1" the 3 groups do not overlap at all whereas there is some overlap in "Mean Profile 2". Standard errors are also larger in "Mean Profile 2", signified by the line thingies. In both plots Group 2 has the largest standard error, and all groups means exhibit the increase in weight discussed previously. In Group 1 this increase seems to be a bit lower than Groups 2 and 3.
+  The main difference is that in "Mean Profile 1" the 3 groups do not overlap at all whereas there is some standard error overlap in "Mean Profile 2". Standard errors are also larger in "Mean Profile 2", signified by the line thingies. In both plots Group 2 has the largest standard error, and all groups means exhibit the increase in weight discussed previously. In Group 1 this increase seems to be a bit lower than Groups 2 and 3.
 
 ### 2.2.3 Plotting Summarised Mean Weight
 
-To look at the development in fattening one way is to look for the mean weight of the rats over the course of the fattening. We can exclude the first observation from day 1 (well use it as a baseline further on) and then proceed to count the mean for each rat. A boxplot shows the results and possible outliers:
+To look at the development in rat growth one (not very good) way is to look for the mean weight of the rats over the course of the fattening. We can exclude the first observation from day 1 (we'll use it as a baseline further on) and then proceed to count the mean for each rat. A boxplot shows the results and possible outliers of the mean summary:
 
 ```{r}
 RATS10 <- long_RATS %>%
@@ -186,17 +196,30 @@ ggplot(RATS10, aes(x = Group, y = mean)) +
   scale_y_continuous(name = "Mean Weight, Days 8-64")
 ```
 
-So not only is Rat No. 12 outliering the cheese out of Group 2, so are the two outliers in Group 1 and Group 3 as well! Group 2 has the most variable mean summary measure, which is also heavily skewed, most likely because of the outlier. Group 1 has the least variable mean summary measure. If we want to get rid of the outliers, we have to find them. We know who the outlier in Group 2 is, and we know the outliers in Groups 1 and 3 are the lightest rats in their respective groups. Here I opted to simply produce a table of Groups 1 and 3 on Day 1 and look for the ID of the lightest weights in the groups.
+So not only is Rat No. 12 outliering the cheese out of Group 2, so are the two outliers in Group 1 and Group 3 as well! Group 2 has the most variable mean summary measure, which is also heavily skewed, most likely because of the outlier. Group 1 has the least variable mean summary measure. If we want to get rid of the outliers, we have to find them. We know who the outlier in Group 2 is, and we know the outliers in Groups 1 and 3 are the lightest rats in their respective groups.  
+Two ways to do this, first we can simply look at a table and find the correct rat by looking for the ID of the lightest weights in the groups and then filter out those ID's.  
+Or. Say, for some reason, we couldn't look at the table, I wrote a small code below trying to practice my R. Here, each group is filtered by the first day of measuring and subsequently put in ascending `order()` by weight. Since we want the first (lightest) observation from groups 1 and 3 they can be sussed out with `head(1)` and since we want the last (heaviest) observation from group 2 we can use `tail()` respectively. These assigned values can be bound with `bind_rows` and then `anti_join(ed)` with the summary dataset `RATS10`, which will keep observations not matching ID's. 
 
 ```{r}
 wee_rat_finder <- long_RATS %>% filter(Time == 1 & Group != 2)
 kable(wee_rat_finder, format = "html", row.names = FALSE, padding = 10, align = "ccccc")
+
+g1 <- long_RATS %>% filter(Time == 1 & Group == "1")
+g1 <- g1[order(g1$Weight),] %>% head(1) %>% dplyr::select(ID)
+g2 <- long_RATS %>% filter(Time == 1 & Group == "2")
+g2 <- g2[order(g2$Weight),] %>% tail(1) %>% dplyr::select(ID)
+g3 <- long_RATS %>% filter(Time == 1 & Group == "3")
+g3 <- g3[order(g3$Weight),] %>% head(1) %>% dplyr::select(ID)
+remove <- bind_rows(g1,g2,g3)
+rats_purged <- anti_join(RATS10,remove)
+glimpse(rats_purged)
 ```
 
-So it's Rat No. 2 (at a featherweight 225 grams) in Group 1, and Rat No. 13 (at 470 grams) in Group 3. So if we want to get rid of the outliers we need to let go of these wee beasts and Rat No. 12.
+So either way, it's Rat No. 2 (at a featherweight 225 grams) in Group 1, and Rat No. 13 (at 470 grams) in Group 3. So a quicker option for this case would be to simply remove the outliers by their ID number. Let's let go of these wee beasts and Rat No. 12. Then perform the same box plot without outliers.
 
 ```{r}
 RATS10_purged <- RATS10 %>% filter(ID != 2 & ID != 12 & ID != 13) # Bye you little rascals!
+glimpse(RATS10_purged)
 
 ggplot(RATS10_purged, aes(x = Group, y = mean)) +
   geom_boxplot() +
@@ -265,7 +288,8 @@ summary(lm_RATS_baselined)
 anova(lm_RATS_baselined)
 ```
 
-The results reveal that the baseline is strongly related to the mean weight taken between days 8-64. No surprises there. However, the evidence towards groups having a strong relation is slightly weaker, with a fairly low F value of 3.22 and p < 0.1. So we might question whether the different groups (read: whatever differences were applied to the groups feeding/living routines etc.) have statistical significance to rat growth. I guess the interpretation here would be one of those "needs further research and a larger sample size" before it can be RATified.
+The `summary()` for `lm_RATS_baselined` shows that baseline is a strong predictor for mean weight conditional on the other coefficients, which is no surprise. Group 2 and 3 have large standard errors and small t-values. Group 2 has an associated p-value of < 0.1.  
+The analysis of variance results reveal that the baseline is strongly related to the mean weight taken between days 8-64. No surprises there. However, the evidence towards groups having a strong relation is slightly weaker, with a fairly low F value of 3.22 and p < 0.1. So we might question whether the different groups (read: whatever differences were applied to the groups feeding/living routines etc.) have statistical significance to rat growth. I guess the interpretation here would be one of those "needs further research and a larger sample size" before it can be RATified.
 
 ## 3 BPRS Dataset and Linear Mixed Effects Models
 
