@@ -46,20 +46,20 @@ The aim of the first part of this exercise here is to follow the steps in chapte
 The rats dataset contains `r nrow(long_RATS)` observations of rat weights (in grams) that are complemented with information of rat subject (16 rat subjects) and its test group (rats assigned in 3 groups) over a time of 64 days. Below, a table of the first, 10th, 20th, .. and 50th observation of the `long_RATS` dataset, printed with `kable()` from the `knitr` package.
 
 ```{r}
-kable(long_RATS[c(1,10,20,30,40,50),], caption = "Rats, so many rats!")
+kable(long_RATS[c(1,10,20,30,40,50),], caption = "Rats, so many rats!", row.names = FALSE)
 ```
 
 For some good luck, let's look at the observations of Rat No. 13:
 
 ```{r}
-kable(long_RATS[long_RATS$ID == "13",])
+kable(long_RATS[long_RATS$ID == "13",], row.names = FALSE)
 ```
 
-So Rat No. 13 belongs to the Group 3 and we have 11 observations of its weight development, which increases from `r long_RATS$Weight[13]` to `r long_RATS$Weight[173]` over the course of the time period. So unless they are hitting the gym, there appears to be some rat fattening going on in this dataset. Who else belongs to Group 3? Let's have a look at the number of rats in each group.
+So Rat No. 13 belongs to the Group 3 and we have 11 observations of its weight development, which increases from `r long_RATS$Weight[13]` to `r long_RATS$Weight[173]` over the course of the time period. So unless they are hitting the gym, there appears to be some rat growth going on in this dataset. Who else belongs to Group 3? Let's have a look at the number of rats in each group.
 
 ```{r}
 rat_per_group <- long_RATS %>% filter(Time == 1) %>% group_by(Group) %>% count() %>% rename("Rats in Group" = n) %>% ungroup()
-kable(rat_per_group, caption = "Rats Numbers in 3 Groups")
+kable(rat_per_group, caption = "Rats Numbers in 3 Groups", row.names = FALSE)
 ```
 
 Group 1 has eight rats while Groups 2 and 3 have four rats each.
@@ -67,8 +67,8 @@ Group 1 has eight rats while Groups 2 and 3 have four rats each.
 
 ## 2.2 Plotting the Rat Fattening
 
-First, lets plot our rodents gain trails with a `geom_line()` plot of their fattening over the 64 day time period. Here the plots are faceted by the three groups discussed above, and we can see how the rats gain weight (and sometimes also lose weight) between the measurements. In this plot I use the argument `linetype =` to specify we want the line types following the Rat ID. In `scale_x_continuous()` I define the argument `breaks =` to contain the measurement days of the dataset and give them names accordingly in the `labels =` argument.  
-In general, all the rats seem to gain weight during the time period. Weight gain seems to be larger in groups 2 and 3. Note that there were two consecutive measurements on day 43 and 44, after which most rats in group 2 and 3 exhibit an increase in weight, suggesting, perhaps, a cheese dinner.
+First, lets plot our rodents gain trails with a `geom_line()` plot of their growth over the 64 day time period. Here the plots are faceted by the three groups discussed above, and we can see how the rats gain weight (and sometimes also lose weight) between the measurements. In this plot I use the argument `linetype =` to specify we want the line types following the Rat ID. In `scale_x_continuous()` I define the argument `breaks =` to contain the measurement days of the dataset and give them names accordingly in the `labels =` argument.  
+In general, all the rats seem to gain weight during the time period. Weight gain seems to be slightly larger in groups 2 and 3. Note that there were two consecutive measurements on day 43 and 44, after which most rats in group 2 and 3 exhibit an increase in weight, suggesting, perhaps, a cheese dinner.
 
 ```{r}
 ggplot(long_RATS, aes(x = Time, y = Weight, linetype = ID)) +
@@ -76,10 +76,10 @@ ggplot(long_RATS, aes(x = Time, y = Weight, linetype = ID)) +
   facet_grid(. ~ Group, labeller = label_both) + 
   scale_y_continuous(limits = c(min(long_RATS$Weight), max(long_RATS$Weight))) +
   scale_x_continuous(breaks = c(1,8,15,22,29,36,43,44,50,57,64), labels = c("1", "8", "15", "22", "29", "36", "4344", "", "50", "57", "64")) +
-  theme_bw() + labs(y = "Weight (grams)", x = "Time (days)") + theme(legend.position = "none", axis.text.x = element_text(angle = 0)) + ggtitle("Rat Fattening in Groups by ID")
+  theme_bw() + labs(y = "Weight (grams)", x = "Time (days)") + theme(legend.position = "none", axis.text.x = element_text(angle = 0)) + ggtitle("Rat Growth in Groups by ID")
 ```
 
-Each group also has a bit of an outlier. The outlier in Group 2 is a particularly blubbery rat. Let's see if we can find this beast, which should be easy as from the plot we see it is the only rat that exceeds the respectable size of 600 grams.
+Each group also has a bit of an outlier. The outlier in Group 2 is a particularly big rat. Let's see if we can find this beast, which should be easy as from the plot we see it is the only rat that exceeds the respectable size of 600 grams.
 
 ```{r}
 fat_rat <- long_RATS %>% filter(Weight > 600) %>% dplyr::select(ID)
@@ -87,9 +87,9 @@ fat_rat[2,]
 ```
 So it's Rat No. 12. I have a hunch this plague bringer may cause some trouble up ahead. But first, let's standardize the `long_RATS` dataset to see if something changes.
 
-### 2.2.1 Standardizing the Rat Fattening
+### 2.2.1 Standardizing the Rat Growth
 
-As we have learned, to standardize a dataset we need to substract the relevant occasion (i.e. measuring day) column mean divided by column standard deviation from the column. This can be done with either the `mean()` and `sd()` functions or use the `scale()` function which gives the same results after the data is `group_by()` the relevant occasion.
+As we have learned, to standardize a dataset we need to substract the relevant occasion (i.e. measuring day) column mean divided by column standard deviation from the column. This can be done with either the `mean()` and `sd()` functions or use the `scale()` function which gives the same results after the data is `group_by()` the relevant occasion. Thus, rat weights are standardized by day of measurement (the Time variable).
 
 ```{r}
 long_RATS_w_std <- long_RATS %>%
@@ -98,7 +98,7 @@ long_RATS_w_std <- long_RATS %>%
   ungroup()
 ```
 
-Now we have a dataset of rats ~~with STD's~~ with standardized weights in a new column. So let's plot it with the same code as above. In general, the rats maintain their relevant position with regards to each other. Group 1 is significantly lighter, remaining in the (-1 area), Group 2 maintains it's position (with Rat No. 12 as the outlier) and Group 3 has the highest distance from the mean at over 1:
+Now we have a dataset (`long_RATS_w_std`) of rats ~~with STD's~~ with standardized weights in a new column. So let's plot it with the same code as above. In general, the rats maintain their relevant position with regards to each other. Group 1 is significantly lighter, remaining in the (-1 area), Group 2 maintains it's position (with Rat No. 12 as the outlier) and Group 3 has the highest distance from the mean at over 1:
 
 
 ```{r}
@@ -107,24 +107,39 @@ ggplot(long_RATS_w_std, aes(x = Time, y = Weight_std, linetype = ID)) +
   facet_grid(. ~ Group, labeller = label_both) + 
   scale_y_continuous(limits = c(min(long_RATS_w_std$Weight_std), max(long_RATS_w_std$Weight_std))) +
   scale_x_continuous(breaks = c(1,8,15,22,29,36,43,44,50,57,64), labels = c("1", "8", "15", "22", "29", "36", "4344", "", "50", "57", "64")) +
-  theme_bw() + labs(y = "Weight (standardized)", x = "Time (days)") + theme(legend.position = "none", axis.text.x = element_text(angle = 0)) + ggtitle("Standardized Rat Fattening in Groups by ID")
+  theme_bw() + labs(y = "Weight (standardized)", x = "Time (days)") + theme(legend.position = "none", axis.text.x = element_text(angle = 0)) + ggtitle("Standardized Rat Growth in Groups by ID")
 ```
 
 ### 2.2.2 Mean Profiles
 
-Average profiles for each Rat Pack can also be plotted. For this we need to also count the standard error, which is `sd(x) / sqrt(n of relevant occasions)`.
+Average profiles for each Rat Pack can also be plotted. For this we need to also count the standard error, which is `sd(x) / sqrt(n, where n is the size (number of observations) of the sample)`. There was some discussion about this on the course forum where a student pointed out that the standard error used in the DataCamp example was, in fact, not correct. So I put together two alternatives, done below.
 
 ```{r}
 n <- long_RATS$Time %>% unique() %>% length()
 
-l_RATS_summary <- long_RATS %>%
+l_RATS_summarya <- long_RATS %>%
   group_by(Group, Time) %>%
   summarise( mean = mean(Weight), se = sd(Weight) / sqrt(n)) %>%
   ungroup()
 
+# The other way:
 
-# Plot the mean profiles
-ggplot(l_RATS_summary, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+n1 <- long_RATS %>% filter(Group == 1) %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
+n2 <- long_RATS %>% filter(Group == 2) %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
+n3 <- long_RATS %>% filter(Group == 3) %>% group_by(Group, Time) %>% count(Group) %>% ungroup() %>% dplyr::select(n) %>% distinct() %>% as.integer()
+
+l_RATS_summaryb <- long_RATS %>%
+  group_by(Group, Time) %>%
+  summarise( mean = mean(Weight), se = sd(Weight) / sqrt(case_when(Group == 1 ~ n1,
+                                                                   Group == 2 ~ n2,
+                                                                   Group == 3 ~ n3))) %>% distinct() %>% ungroup()
+
+```
+
+**The DataCamp way:**
+
+```{r}
+ggplot(l_RATS_summarya, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
   geom_line() +
   scale_linetype_manual(values = c(1,2,3)) +
   geom_point(aes(col = Group), size=5) +
@@ -132,10 +147,26 @@ ggplot(l_RATS_summary, aes(x = Time, y = mean, linetype = Group, shape = Group))
   geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=2) +
   scale_y_continuous(name = "Mean (weight) +/- Standard Error (weight)") + 
   scale_x_continuous(breaks = c(1,8,15,22,29,36,43,44,50,57,64), labels = c("1", "8", "15", "22", "29", "36", "4344", "", "50", "57", "64")) +
-  theme_bw() + theme(legend.position = c(0.9,0.5))
+  theme_bw() + theme(legend.position = c(0.9,0.5)) + ggtitle("Mean Profile 1")
 ```
 
-  From this plot we see  the 3 groups do not overlap. Group 2 has the largest variation, and all groups exhibit the increase in weight discussed previously. In Group 1 this increase seems to be a bit lower than Groups 2 and 3.
+**The Other Way:**
+
+```{r}
+ggplot(l_RATS_summaryb, aes(x = Time, y = mean, linetype = Group, shape = Group)) +
+  geom_line() +
+  scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(aes(col = Group), size=5) +
+  scale_shape_manual(values = c("circle","square","triangle")) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=2) +
+  scale_y_continuous(name = "Mean (weight) +/- Standard Error (weight)") + 
+  scale_x_continuous(breaks = c(1,8,15,22,29,36,43,44,50,57,64), labels = c("1", "8", "15", "22", "29", "36", "4344", "", "50", "57", "64")) +
+  theme_bw() + theme(legend.position = c(0.9,0.5)) + ggtitle("Mean Profile 2")
+```
+
+
+
+  The main difference is that in "Mean Profile 1" the 3 groups do not overlap at all whereas there is some overlap in "Mean Profile 2". Standard errors are also larger in "Mean Profile 2", signified by the line thingies. In both plots Group 2 has the largest standard error, and all groups means exhibit the increase in weight discussed previously. In Group 1 this increase seems to be a bit lower than Groups 2 and 3.
 
 ### 2.2.3 Plotting Summarised Mean Weight
 
@@ -159,10 +190,10 @@ So not only is Rat No. 12 outliering the cheese out of Group 2, so are the two o
 
 ```{r}
 wee_rat_finder <- long_RATS %>% filter(Time == 1 & Group != 2)
-kable(wee_rat_finder)
+kable(wee_rat_finder, format = "html", row.names = FALSE, padding = 10, align = "ccccc")
 ```
 
-Ah, so it's Rat No. 2 (at a featherweight 225 grams) in Group 1, and Rat No. 13 (at 470 grams) in Group 3. So if we want to get rid of the outliers we need to let go of these wee beasts and Rat No. 12.
+So it's Rat No. 2 (at a featherweight 225 grams) in Group 1, and Rat No. 13 (at 470 grams) in Group 3. So if we want to get rid of the outliers we need to let go of these wee beasts and Rat No. 12.
 
 ```{r}
 RATS10_purged <- RATS10 %>% filter(ID != 2 & ID != 12 & ID != 13) # Bye you little rascals!
@@ -180,7 +211,7 @@ Well we did what we came to do, now we have seven rats in Group 1, and three rat
 
 ### 2.3.1 Linear Model
 
-For a three value variable a t-test is apparently not the thing to do, so let's look at ANOVA. First, we need to create a linear model with `lm()` where the mean is predicted by group. As we saw earlier in the mean profiles plot, where the groups were not overlapping, we might expect to get statistically significant results here as well. There is an option to consider, do we use the dataset with no outliers or the dataset with outliers? The summaries below reveal that the t-values for the dataset with no outliers are much higher, but both summaries arrive at similar conclusions.
+For a three value variable a t-test is apparently not the thing to do (*no, I most certainly did not attempt to do this multiple times, what are you talking about?*), so let's look at ANOVA. First, we need to create a linear model with `lm()` where the mean is predicted by group. As we saw earlier in the mean profiles plot, where the groups were not overlapping, we might expect to get statistically significant results here as well. There is an option to consider, do we use the dataset with no outliers or the dataset with outliers? The summaries below reveal that the t-values for the dataset with no outliers are much higher, but both summaries arrive at similar conclusions.
 
 ```{r}
 
@@ -213,7 +244,7 @@ However, this does not tell us much. For a slightly better approach, we need to 
 
 ### 2.3.2 Linear Model with Baseline
 
-To create the baseline we need to load the original dataset and then snatch the Day 1 results from the `WD1` column onto our `RATS10` dataset that has the means for the rest of the measurement days.
+To create the baseline we need to load the original dataset and then snatch the Day 1 results from the `WD1` column onto our `RATS10` dataset that has the means for the rest of the measurement days. So a quick `read.table` and `mutate` `RATS$WD1` as a new column into `RATS10` (the mean summary dataset) and assign it as a new dataframe.
 
 ```{r}
 RATS <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/MABS/master/Examples/data/rats.txt", sep = "\t", header = TRUE)
@@ -234,7 +265,7 @@ summary(lm_RATS_baselined)
 anova(lm_RATS_baselined)
 ```
 
-The results reveal that the baseline is strongly related to the mean weight taken between days 8-64. However, the evidence towards groups having a strong relation is slightly weaker, with a fairly low F value of 3.22 and p < 0.1. So we might question whether the different groups (read: whatever differences were applied to the groups feeding/living routines etc.) have statistical significance to rat fattening. I guess the interpretation here would be one of those "needs further research and a larger sample size" before it can be RATified.
+The results reveal that the baseline is strongly related to the mean weight taken between days 8-64. No surprises there. However, the evidence towards groups having a strong relation is slightly weaker, with a fairly low F value of 3.22 and p < 0.1. So we might question whether the different groups (read: whatever differences were applied to the groups feeding/living routines etc.) have statistical significance to rat growth. I guess the interpretation here would be one of those "needs further research and a larger sample size" before it can be RATified.
 
 ## 3 BPRS Dataset and Linear Mixed Effects Models
 
@@ -252,13 +283,13 @@ BPRS$subject <- as.factor(BPRS$subject)
 The BPRS dataset consists of observations of 40 subjects assigned to two treatment groups. They were rated on the brief psychiatrist rating scale (BPRS) over the course of 9 weeks (with week 0 as the baseline having received no treatment yet). In the dataset, each subject is assigned with treatment number (a factor level) and subject identification number (a factor level):
 
 ```{r}
-kable(BPRS[1:5,], caption = "First 5 Subjects of BPRS Dataset")
+kable(BPRS[1:5,], caption = "First 5 Subjects of BPRS Dataset", row.names = FALSE)
 ```
 
 For analysis of longitudinal change, the dataset was converted to long form with each observation of score on a separate row:
 
 ```{r}
-kable(long_BPRS[c(long_BPRS$subject == "1" & long_BPRS$treatment == "1"),], caption = "Subject 1 from Treatment 1 in Long Form Data")
+kable(long_BPRS[c(long_BPRS$subject == "1" & long_BPRS$treatment == "1"),], caption = "Subject 1 from Treatment 1 in Long Form Data", row.names = FALSE)
 ```
 
 ## 3.2 Plotting Subject Scores
@@ -301,15 +332,20 @@ long_BPRS <- long_BPRS %>% mutate(new_subject = case_when(treatment == "1" ~ sub
                                                           treatment == "2" ~ subject + 20))
 long_BPRS$subject <- as.factor(long_BPRS$subject)
 long_BPRS$new_subject <- as.factor(long_BPRS$new_subject)
+str(long_BPRS)
+```
 
+A random intercept model is created with the `lmer()` function from `lme4` package. The formula is specified similarly to `lm()`.
 
+```{r}
 BPRS_ref <- lmer(bprs_score ~ week + treatment + (1 | new_subject), data = long_BPRS, REML = FALSE)
 
 
 summary(BPRS_ref)
 ```
 
-The summary of the random intercept model shows that the Fixed Effects t-value for week remains somewhat similar to the multiple linear regression model (-15.1 compared to -9.0). The t-value for treatment2 is close to zero (0.178) indicating no statistical significance in comparison to treatment1.
+
+The summary of the random intercept model shows that the Fixed Effects t-value for week remains somewhat similar to the multiple linear regression model (-15.1 compared to -9.0). The t-value for treatment2 is close to zero (0.178) indicating no statistical significance (conditional on week) (and with treatment1 as the reference).
 
 ### 3.4.2 Random Intercept and Slope
 
@@ -320,7 +356,7 @@ BPRS_ref1 <- lmer(bprs_score ~ week + treatment + (week | new_subject), data = l
 summary(BPRS_ref1)
 ```
 
-An anova test shows the likelihood ratio test for the random intercept model versus the random intercept and slope model gives a chi-squared statistic of 63.7 with 2 dimensions of freedom. The associated p-value is very small < 0.001 indicating that the random intercept and slope model provides a better fit for the data than the random intercept model.
+An anova test, below, shows the likelihood ratio test for the random intercept model versus the random intercept and slope model gives a chi-squared statistic of 63.7 with 2 dimensions of freedom. The associated p-value is very small < 0.001 indicating that the random intercept and slope model provides a better fit for the data than the random intercept model.
 
 ```{r}
 anova(BPRS_ref, BPRS_ref1)
@@ -336,8 +372,7 @@ BPRS_ref2 <- lmer(bprs_score ~ week * treatment + (week | new_subject), data = l
 summary(BPRS_ref2)
 ```
 
-An analysis of variance reveals the likelihood ratio test of the interaction random intercept and slope model against the corresponding
-model without an interaction is 1.78 with 1 dimension of freedom. An associated p-value is 0.18, which is smallish but doesn't imply significance. We might interpret that this model with interaction is, in fact, not a better fit to the data than the previous model of random intercept and random slope, although the difference between them is small.
+An analysis of variance, below, reveals the likelihood ratio test of the interaction random intercept and slope model against the corresponding model without an interaction is 1.78 with 1 dimension of freedom. An associated p-value is 0.18, which is *smallish* but doesn't imply significance. We might interpret that this model with interaction is, in fact, not a better fit to the data than the previous model of random intercept and random slope, although the difference between them is small (the AIC, for example, increases by just 0.3).
 
 ```{r}
 anova(BPRS_ref2,BPRS_ref1)
@@ -350,6 +385,8 @@ The model with the best fit was the random intercept and slope model. This model
 Fitted <- fitted(BPRS_ref1)
 long_BPRS <- long_BPRS %>% mutate(Fitted)
 ```
+
+These fitted values can be plotted and compared to the actual observations:
 
 ```{r}
 p_BPRS <- ggplot(long_BPRS, aes(x = week, y = bprs_score, linetype = new_subject)) +
@@ -369,4 +406,5 @@ p_Fitted <- ggplot(long_BPRS, aes(x = week, y = Fitted, linetype = new_subject))
 p_BPRS;p_Fitted
 ```
 
-When comparing the plots of actual observations and fitted observations, we see that the fitted values of the interaction model do not fit the actual observations. At all really. This more or less means that predicting measurements would require more variables that capture variation, i.e. other factors that affect the rating scores. The fitted model does capture the same general tendency for the scores to fall over time, and we also see that the fitted lines for the two treatment groups are fairly similar, meaning there doesn't seem to be much difference between the treatments in terms of their effects on BPRS scores from this perspective either.
+When comparing the plots of actual observations and fitted observations, we see that the fitted values of the interaction model do not fit the actual observations. At all really. Except for some of the starting points, and some of the ending points. This more or less means that predicting measurements correctly would require more variables that capture variation, i.e. other factors that affect the rating score variation between measurements.  
+The fitted model does capture the same general tendency for the scores to fall over time, and we also see that the fitted lines for the two treatment groups are fairly similar, meaning there doesn't seem to be much difference between the treatments in terms of their effects on BPRS scores from this perspective either.
